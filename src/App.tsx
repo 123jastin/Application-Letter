@@ -59,14 +59,11 @@ export const stripComments = (str: string): string => {
 
 export const stripMarkdownAndHtml = (str: string): string => {
   if (!str) return '';
-  // First clean any HTML comments
   let cleaned = str.replace(/<!--[\s\S]*?-->/g, '');
-  // Clean markdown bold, italic, underline markers as literal strings
   cleaned = cleaned.replace(/\*\*+/g, '');
   cleaned = cleaned.replace(/\_\_+/g, '');
   cleaned = cleaned.replace(/\*+/g, '');
   cleaned = cleaned.replace(/\_\_/g, '');
-  // Clean raw HTML elements to prevent HTML codes visual clutter like <u> </u> <b> </strong>
   cleaned = cleaned.replace(/<\/?[a-zA-Z0-9\s="'-]*>/g, '');
   return cleaned.trim();
 };
@@ -85,15 +82,13 @@ export const getRegionalStandard = (country: string): 'East African Formal' | 'U
   if (['United Arab Emirates'].includes(country)) {
     return 'Gulf Professional';
   }
-  return 'European Corporate'; // South Africa, etc.
+  return 'European Corporate';
 };
 
 export const formatAddressLines = (address: string): string[] => {
   if (!address) return [];
-  // Split by newlines first
   const lines = address.split('\n').map(l => l.trim()).filter(Boolean);
   if (lines.length > 1) return lines;
-  // If no newlines, split by commas
   return address.split(',').map(l => l.trim()).filter(Boolean);
 };
 
@@ -114,7 +109,6 @@ export const parseLetterUncommented = (text: string): ParsedLetter => {
 
   const lines = text.split('\n').map(l => l.trim());
   
-  // Try to find subject line
   let subjectIdx = -1;
   const subjectRegex = /^(REF:|RE:|SUBJECT:|YAH:|KUT:|MAOMBI YA)/i;
   for (let i = 0; i < Math.min(lines.length, 12); i++) {
@@ -126,7 +120,6 @@ export const parseLetterUncommented = (text: string): ParsedLetter => {
     }
   }
 
-  // Try to find salutation line
   let salutationIdx = -1;
   const salutationWords = ['DEAR', 'NDUGU', 'TO WHOM', 'HI ', 'HELLO', 'MHE.', 'MKURUGENZI', 'MENEJA', 'SALAAM'];
   for (let i = 0; i < Math.min(lines.length, 15); i++) {
@@ -138,7 +131,6 @@ export const parseLetterUncommented = (text: string): ParsedLetter => {
     }
   }
 
-  // Try to find closing line
   let closingIdx = -1;
   const closingWords = ['SINCERELY', 'FAITHFULLY', 'KIND REGARDS', 'BEST REGARDS', 'WAKO', 'ASANTE', 'WAKO ATIKA', 'WAKO UAMINIFU'];
   for (let i = lines.length - 1; i >= Math.max(0, lines.length - 10); i--) {
@@ -150,14 +142,12 @@ export const parseLetterUncommented = (text: string): ParsedLetter => {
     }
   }
 
-  // Find Employer address details if present
   if (salutationIdx !== -1) {
     const employerIdxEnd = subjectIdx !== -1 ? Math.min(subjectIdx, salutationIdx) : salutationIdx;
     const candidateLinesCount = Math.max(0, employerIdxEnd - 3);
     result.employer = lines.slice(candidateLinesCount, employerIdxEnd).filter(Boolean).join('\n');
   }
 
-  // Extract date
   const dateRegex = /\b\d{1,2}(st|nd|rd|th)?\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{4}\b/i;
   const dateMatchResult = text.match(dateRegex);
   if (dateMatchResult) {
@@ -171,7 +161,6 @@ export const parseLetterUncommented = (text: string): ParsedLetter => {
     }
   }
 
-  // Body content extraction
   const bodyStart = Math.max(subjectIdx, salutationIdx) + 1;
   const bodyEnd = closingIdx !== -1 ? closingIdx : lines.length - 2;
   if (bodyStart < bodyEnd) {
@@ -251,15 +240,8 @@ export const parseLetterText = (text: string): ParsedLetter => {
 };
 
 export default function App() {
-  // Page Steps: 
-  // 0: Initial/Profile Info 
-  // 1: Professional Background 
-  // 2: Target Job Details & Simulation
-  // 3: Country Context Guidelines
-  // 4: Letter Work Space Studio (Output generated)
   const [activeStep, setActiveStep] = useState<number>(0);
 
-  // Core Form Structures
   const [personalInfo, setPersonalInfo] = useState<PersonalInfo>({
     fullName: '',
     phone: '',
@@ -270,7 +252,7 @@ export default function App() {
   });
 
   const [professionalInfo, setProfessionalInfo] = useState<ProfessionalInfo>({
-    highestEducation: 'Bachelor’s Degree',
+    highestEducation: 'Bachelor\'s Degree',
     yearsOfExperience: '3',
     keySkills: '',
     currentPosition: 'Jobseeker'
@@ -287,27 +269,21 @@ export default function App() {
   const [targetCountry, setTargetCountry] = useState<TargetCountry>('Tanzania');
   const [targetLanguage, setTargetLanguage] = useState<'English' | 'Swahili'>('English');
 
-  // Backups of unmodified drafts for Revert/Reset Editor function
   const [originalApplication, setOriginalApplication] = useState<string>('');
   const [originalCover, setOriginalCover] = useState<string>('');
 
-  // Scraper status hooks
   const [isFetchingUrl, setIsFetchingUrl] = useState<boolean>(false);
   const [urlFetchError, setUrlFetchError] = useState<string>('');
 
-  // Multi-step errors validator
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-  // JobsReport simulated jobs list for demonstration prefill
   const [simulatedJobs, setSimulatedJobs] = useState<JobInfo[]>([]);
   const [selectedSimulatedJobIndex, setSelectedSimulatedJobIndex] = useState<number | null>(null);
 
-  // Process States
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [generatorStages, setGeneratorStages] = useState<string>('');
   const [generatedResult, setGeneratedResult] = useState<GeneratedLetters | null>(null);
 
-  // Studio Workspace settings
   const [activeTab, setActiveTab] = useState<'application' | 'cover'>('application');
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editedApplication, setEditedApplication] = useState<string>('');
@@ -315,7 +291,6 @@ export default function App() {
   const [copiedState, setCopiedState] = useState<boolean>(false);
   const [saveFeedback, setSaveFeedback] = useState<string>('');
 
-  // Document Styling Controls
   const [layoutConfig, setLayoutConfig] = useState({
     marginSize: 'standard' as 'compact' | 'standard' | 'wide',
     fontSize: 'medium' as 'small' | 'medium' | 'large',
@@ -325,21 +300,24 @@ export default function App() {
     signatureColor: 'text-blue-900'
   });
 
-  // History system
   const [letterHistory, setLetterHistory] = useState<GeneratedLetters[]>([]);
   const [showHistoryDrawer, setShowHistoryDrawer] = useState<boolean>(false);
   const [historySearchQuery, setHistorySearchQuery] = useState<string>('');
 
-  // Drag and drop states
   const [isDraggingFile, setIsDraggingFile] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Load baseline values from localStorage if available
+  // Load baseline values from localStorage and cloud
   useEffect(() => {
     const savedPersonalInfo = localStorage.getItem('jr_personal_info');
     if (savedPersonalInfo) {
       try {
-        setPersonalInfo(JSON.parse(savedPersonalInfo));
+        const info = JSON.parse(savedPersonalInfo);
+        setPersonalInfo(info);
+        // Load cloud history if email exists
+        if (info.email) {
+          fetchLetterHistory(info.email);
+        }
       } catch (e) {
         console.error("Failed to parse personal info");
       }
@@ -354,31 +332,141 @@ export default function App() {
       }
     }
 
-    // Load available simulator jobs from backend API
     fetchSimulatedJobs();
   }, []);
 
   const activeStandard = generatedResult?.regionalStandard || getRegionalStandard(generatedResult?.request?.targetCountry || targetCountry);
 
-  // Sync personal info on changes
   const savePersonalInfoLocally = (info: PersonalInfo) => {
     setPersonalInfo(info);
     localStorage.setItem('jr_personal_info', JSON.stringify(info));
   };
 
+  // Fetch simulated jobs from Cloudflare backend
   const fetchSimulatedJobs = async () => {
     try {
-      const res = await fetch('/api/simulate-job');
+      const res = await fetch('/api/simulate-jobs');
       if (res.ok) {
         const data = await res.json();
         setSimulatedJobs(data.jobs || []);
       }
     } catch (err) {
-      console.error('Failed to pre-fetch simulated jobs', err);
+      console.error('Failed to fetch simulated jobs', err);
     }
   };
 
-  // Perform Simulated Pre-fill trigger
+  // Fetch letter history from Cloudflare backend
+  const fetchLetterHistory = async (email: string) => {
+    try {
+      // First get candidate ID
+      const candidateRes = await fetch(`/api/candidates?email=${encodeURIComponent(email)}`);
+      if (candidateRes.ok) {
+        const { candidate } = await candidateRes.json();
+        if (candidate) {
+          // Then get their letters
+          const lettersRes = await fetch(`/api/letters?candidateId=${candidate.id}`);
+          if (lettersRes.ok) {
+            const { letters } = await lettersRes.json();
+            // Merge with localStorage history
+            const cloudLetters = letters.map((l: any) => ({
+              id: l.id,
+              createdAt: l.created_at,
+              request: {
+                personalInfo: personalInfo,
+                professionalInfo: professionalInfo,
+                jobInfo: {
+                  jobTitle: l.title || '',
+                  companyName: l.company_name || '',
+                  jobDescription: l.description || '',
+                },
+                targetCountry: l.target_country || 'Tanzania',
+              },
+              applicationLetter: l.application_letter_text,
+              coverLetter: l.cover_letter_text,
+              atsAnalysis: {
+                matchScore: l.match_score || 70,
+                matchingSkills: l.matching_skills || [],
+                missingSkills: l.missing_skills || [],
+                recommendations: l.recommendations || [],
+                cvImprovements: l.cv_improvements || [],
+              },
+              regionalStandard: l.regional_standard || 'East African Formal',
+              employerCountry: l.employer_country || 'Tanzania',
+            }));
+            
+            setLetterHistory(prev => {
+              const existingIds = new Set(prev.map(h => h.id));
+              const newItems = cloudLetters.filter((cl: any) => !existingIds.has(cl.id));
+              return [...newItems, ...prev].slice(0, 50);
+            });
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load cloud history', err);
+    }
+  };
+
+  // Save candidate profile to Cloudflare backend
+  const saveCandidateToCloud = async () => {
+    try {
+      await fetch('/api/candidates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: personalInfo.email,
+          fullName: personalInfo.fullName,
+          phone: personalInfo.phone,
+          address: personalInfo.address,
+          highestEducation: professionalInfo.highestEducation,
+          yearsOfExperience: parseInt(professionalInfo.yearsOfExperience) || 0,
+          currentPosition: professionalInfo.currentPosition,
+          keySkills: professionalInfo.keySkills.split(',').map(s => s.trim()).filter(Boolean),
+          signatureText: personalInfo.signatureText,
+          signatureImage: personalInfo.signatureImage,
+        })
+      });
+    } catch (err) {
+      console.error('Failed to save candidate profile', err);
+    }
+  };
+
+  // Save letter to Cloudflare backend
+  const saveLetterToCloud = async (letter: GeneratedLetters) => {
+    try {
+      // First ensure candidate exists
+      await saveCandidateToCloud();
+      
+      // Then save letter
+      const response = await fetch('/api/letters', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          candidateEmail: personalInfo.email,
+          title: letter.request.jobInfo.jobTitle,
+          companyName: letter.request.jobInfo.companyName,
+          description: letter.request.jobInfo.jobDescription,
+          targetCountry: letter.request.targetCountry,
+          applicationLetterText: letter.applicationLetter,
+          coverLetterText: letter.coverLetter,
+          matchScore: letter.atsAnalysis.matchScore,
+          matchingSkills: letter.atsAnalysis.matchingSkills,
+          missingSkills: letter.atsAnalysis.missingSkills,
+          recommendations: letter.atsAnalysis.recommendations,
+          cvImprovements: letter.atsAnalysis.cvImprovements,
+          regionalStandard: letter.regionalStandard || getRegionalStandard(letter.request.targetCountry),
+          employerCountry: letter.employerCountry || letter.request.targetCountry,
+        })
+      });
+      
+      if (!response.ok) {
+        console.error('Failed to save letter to cloud');
+      }
+    } catch (err) {
+      console.error('Failed to save letter to cloud', err);
+    }
+  };
+
   const handleJobPrefillSimulate = (index: number) => {
     const targetJob = simulatedJobs[index];
     if (targetJob) {
@@ -391,22 +479,19 @@ export default function App() {
       });
       setSelectedSimulatedJobIndex(index);
       
-      // Auto assign target country based on company details
       if (targetJob.companyAddress?.includes('Kenya')) {
         setTargetCountry('Kenya');
       } else {
-        setTargetCountry('Tanzania'); // default to Brand base
+        setTargetCountry('Tanzania');
       }
 
-      // Add a nice subtle pulse notice
       const tempErrors = { ...formErrors };
       delete tempErrors.jobTitle;
       delete tempErrors.companyName;
       delete tempErrors.jobDescription;
       setFormErrors(tempErrors);
 
-      // Flash success visual notification
-      toastSuccess('Job loaded successfully from JobsReport.online API!');
+      toastSuccess('Job loaded successfully from JobsReport API!');
     }
   };
 
@@ -430,7 +515,6 @@ export default function App() {
     }, 4000);
   };
 
-  // Drag-and-drop logic for user handdrawn signatures
   const handleSignatureDrag = (e: React.DragEvent) => {
     e.preventDefault();
     if (e.type === 'dragenter' || e.type === 'dragover') {
@@ -478,7 +562,6 @@ export default function App() {
     setLayoutConfig(prev => ({ ...prev, signatureType: 'typed' }));
   };
 
-  // Form step-by-step validations
   const validateStep = (step: number): boolean => {
     const errors: Record<string, string> = {};
     
@@ -521,7 +604,6 @@ export default function App() {
     window.scrollTo(0, 0);
   };
 
-  // Scrapes any target job URL using our server-side intelligent crawler
   const handleScrapeJobUrl = async () => {
     if (!jobInfo.jobUrl.trim()) {
       setUrlFetchError('Please enter a valid job listing URL first.');
@@ -553,7 +635,6 @@ export default function App() {
         jobUrl: jobInfo.jobUrl
       });
       
-      // Clear dynamic form errors
       setFormErrors(prev => ({
         ...prev,
         jobTitle: '',
@@ -568,17 +649,16 @@ export default function App() {
     }
   };
 
-  // Triggering the server-side Gemini generation
+  // Updated generate letters with Cloudflare backend
   const handleGenerateLetters = async () => {
     if (!validateStep(0) || !validateStep(1) || !validateStep(2)) {
-      setActiveStep(0); // return to correct error
+      setActiveStep(0);
       return;
     }
 
     setIsGenerating(true);
     setGeneratorStages('Scanning Job Requirements & Target Scope...');
-    
-    // Simulate pipeline milestones for maximum user engagement
+
     const intervals = [
       { text: 'Deconstructing industry context for ' + targetCountry + ' standard...', time: 1000 },
       { text: 'Cross-referencing Candidate qualifications with requested experience...', time: 2500 },
@@ -590,17 +670,14 @@ export default function App() {
 
     intervals.forEach(milestone => {
       setTimeout(() => {
-        setIsGenerating(true);
         setGeneratorStages(milestone.text);
       }, milestone.time);
     });
 
     try {
-      const response = await fetch('/api/generate-letter', {
+      const response = await fetch('/api/generate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           personalInfo,
           professionalInfo,
@@ -616,10 +693,10 @@ export default function App() {
       }
 
       const parsedResult = await response.json();
-      
+
       const sessionResult: GeneratedLetters = {
-        id: 'letter_' + Date.now(),
-        createdAt: new Date().toISOString(),
+        id: parsedResult.id || 'letter_' + Date.now(),
+        createdAt: parsedResult.createdAt || new Date().toISOString(),
         request: {
           personalInfo,
           professionalInfo,
@@ -639,14 +716,18 @@ export default function App() {
       setEditedApplication(parsedResult.applicationLetter);
       setEditedCover(parsedResult.coverLetter);
 
-      // Save to saved history list locally
+      // Save to localStorage
       const updatedHistory = [sessionResult, ...letterHistory];
       setLetterHistory(updatedHistory);
       localStorage.setItem('jr_letters_history', JSON.stringify(updatedHistory));
 
-      // Successfully processed!
+      // Save to cloud (non-blocking)
+      if (personalInfo.email) {
+        await saveLetterToCloud(sessionResult);
+      }
+
       setIsGenerating(false);
-      setActiveStep(4); // Advance to workspace tab
+      setActiveStep(4);
       toastSuccess('Application Letters Prepared Successfully!');
 
     } catch (err: any) {
@@ -656,7 +737,7 @@ export default function App() {
     }
   };
 
-  // Restores a generated application record from past local list history
+  // Updated restore letter handler
   const handleRestoreLetter = (historyItem: GeneratedLetters) => {
     setGeneratedResult(historyItem);
     setPersonalInfo(historyItem.request.personalInfo);
@@ -672,25 +753,32 @@ export default function App() {
     toastSuccess('Loaded application record successfully');
   };
 
-  // Delete a history record
-  const handleDeleteHistoryItem = (id: string, e: React.MouseEvent) => {
+  // Updated delete history item with cloud sync
+  const handleDeleteHistoryItem = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (confirm('Are you sure you want to delete this archived letter from history?')) {
+      // Delete from localStorage
       const filtered = letterHistory.filter(item => item.id !== id);
       setLetterHistory(filtered);
       localStorage.setItem('jr_letters_history', JSON.stringify(filtered));
+      
+      // Delete from cloud
+      try {
+        await fetch(`/api/letters?id=${id}`, { method: 'DELETE' });
+      } catch (err) {
+        console.error('Failed to delete from cloud', err);
+      }
+      
       toastSuccess('Deleted archived letter');
     }
   };
 
-  // Copy code utility
   const copyLetterToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     setCopiedState(true);
     setTimeout(() => setCopiedState(false), 2000);
   };
 
-  // Download plain text (.txt) file directly (bulletproof inside iframe)
   const downloadPlainText = (text: string, title: string) => {
     const cleanText = stripMarkdownAndHtml(text);
     const blob = new Blob([cleanText], { type: 'text/plain;charset=utf-8' });
@@ -704,7 +792,6 @@ export default function App() {
     URL.revokeObjectURL(url);
   };
 
-  // Download high fidelity Word (.doc) document directly (bulletproof inside iframe)
   const downloadWordDoc = (text: string, title: string) => {
     const parsed = parseLetterText(text);
     const cleanText = stripMarkdownAndHtml(text);
@@ -712,7 +799,6 @@ export default function App() {
     const cleanSubject = stripMarkdownAndHtml(parsed.subject || 'APPLICATION FOR EMPLOYMENT');
     const activeStandard = generatedResult?.regionalStandard || getRegionalStandard(generatedResult?.request?.targetCountry || targetCountry);
 
-    // Dynamic styles based on layoutConfig
     let fontSizeWord = '11.5pt';
     if (layoutConfig.fontSize === 'small') fontSizeWord = '10pt';
     else if (layoutConfig.fontSize === 'large') fontSizeWord = '12.5pt';
@@ -721,12 +807,11 @@ export default function App() {
     if (layoutConfig.marginSize === 'compact') marginWord = '0.5in';
     else if (layoutConfig.marginSize === 'wide') marginWord = '1.25in';
 
-    // Signature block formatting based on layoutConfig
     let signatureHtml = '';
     if (layoutConfig.signatureType === 'uploaded' && personalInfo.signatureImage) {
       signatureHtml = `<img src="${personalInfo.signatureImage}" style="height: 40pt; max-width: 150pt; object-fit: contain; margin-bottom: 5px;" alt="Signature"/>`;
     } else if (personalInfo.signatureText) {
-      let sigColorHex = '#1e3a8a'; // default deep blue signature
+      let sigColorHex = '#1e3a8a';
       if (layoutConfig.signatureColor === 'text-blue-900') sigColorHex = '#1e3a8a';
       else if (layoutConfig.signatureColor === 'text-slate-900') sigColorHex = '#0f172a';
       else if (layoutConfig.signatureColor === 'text-emerald-900') sigColorHex = '#064e3b';
@@ -947,7 +1032,6 @@ export default function App() {
         </div>
       `;
     } else {
-      // European Corporate fallback
       layoutContent = `
         <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; margin-bottom: 25px; border-bottom: 1px solid #cbd5e1; padding-bottom: 12px;">
           <tr>
@@ -994,7 +1078,6 @@ export default function App() {
       `;
     }
 
-    // Make standard formatted rich .doc contents with formal inline css
     const htmlContent = `
       <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
       <head>
@@ -1033,7 +1116,6 @@ export default function App() {
     URL.revokeObjectURL(url);
   };
 
-  // Download PDF digitally using HTML2Canvas and jsPDF for bulletproof output inside iframes
   const downloadPDFDocument = async (title: string) => {
     const element = document.getElementById('printable-area');
     if (!element) {
@@ -1044,22 +1126,19 @@ export default function App() {
     try {
       setSaveFeedback('Preparing executive-level digital PDF layout... Please wait 1-2 seconds.');
 
-      // Temporarily remove shadow and borders during snapshot for professional results
       const originalBoxShadow = element.style.boxShadow;
       const originalBorder = element.style.border;
       
       element.style.boxShadow = 'none';
       element.style.border = 'none';
 
-      // Capture screenshot at high resolution (2x) to ensure beautiful, readable, vector-like fonts
       const canvas = await html2canvas(element, {
-        scale: 2, // High resolution retina rendering for pristine fonts
+        scale: 2,
         useCORS: true,
         logging: false,
         backgroundColor: '#ffffff'
       });
 
-      // Restore style
       element.style.boxShadow = originalBoxShadow;
       element.style.border = originalBorder;
 
@@ -1071,8 +1150,8 @@ export default function App() {
         format: 'a4'
       });
 
-      const pdfWidth = pdf.internal.pageSize.getWidth(); // 210mm
-      const pdfHeight = pdf.internal.pageSize.getHeight(); // 297mm
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
       
       const imgWidth = canvas.width;
       const imgHeight = canvas.height;
@@ -1080,10 +1159,8 @@ export default function App() {
       const calculatedHeight = pdfWidth / ratio;
 
       if (calculatedHeight <= pdfHeight) {
-        // Fits perfectly on single page
         pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, calculatedHeight, undefined, 'FAST');
       } else {
-        // Multi-page capability for long cover letters
         let position = 0;
         let leftHeight = calculatedHeight;
         while (leftHeight > 0) {
@@ -1107,12 +1184,10 @@ export default function App() {
     }
   };
 
-  // Browser print trigger (linked directly to CSS printing rules)
   const handlePrintDocument = () => {
     window.print();
   };
 
-  // Helper formatting styles for standard preview sizes
   const getMarginStyle = () => {
     switch (layoutConfig.marginSize) {
       case 'compact': return 'py-8 px-10';
@@ -1138,7 +1213,6 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col antialiased">
       
-      {/* 1. BRAND GLOBAL TOP NAVBAR HEADER */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-30 no-print">
         <div className="max-w-7xl mx-auto px-6 sm:px-8 h-18 flex items-center justify-between">
           
@@ -1187,7 +1261,6 @@ export default function App() {
         </div>
       </header>
 
-      {/* JOBSREPORT DUAL-BANNER NOTIFICATION IN DEVELOPMENT */}
       {simulatedJobs.length > 0 && activeStep < 4 && (
         <div className="bg-white border-b border-slate-200 no-print px-6 py-2.5 text-center text-xs text-slate-650 flex flex-wrap items-center justify-center gap-2">
           <span className="inline-flex items-center rounded bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-[#0B5ED7] border border-blue-100">
@@ -1205,10 +1278,8 @@ export default function App() {
         </div>
       )}
 
-      {/* MAIN CONTAINER WORKSPACE */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col no-print">
         
-        {/* STEPPER WIZARD HEADERS */}
         {activeStep < 4 && (
           <div className="mb-8 max-w-3xl mx-auto w-full">
             <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 bg-white border border-slate-200 p-4 rounded-xl shadow-sm">
@@ -1254,7 +1325,6 @@ export default function App() {
           
           <AnimatePresence mode="wait">
             
-            {/* STEP 0: PERSONAL INFORMATION */}
             {activeStep === 0 && (
               <motion.div
                 key="step-0"
@@ -1276,7 +1346,6 @@ export default function App() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   
-                  {/* Full Name */}
                   <div className="flex flex-col">
                     <label className="text-xs font-bold text-slate-800 uppercase tracking-widest mb-2 flex items-center space-x-1">
                       <span>Full Name</span>
@@ -1299,7 +1368,6 @@ export default function App() {
                     {formErrors.fullName && <p className="text-xs font-medium text-red-500 mt-1.5">{formErrors.fullName}</p>}
                   </div>
 
-                  {/* Email Address */}
                   <div className="flex flex-col">
                     <label className="text-xs font-bold text-slate-800 uppercase tracking-widest mb-2 flex items-center space-x-1">
                       <span>Email Address</span>
@@ -1322,7 +1390,6 @@ export default function App() {
                     {formErrors.email && <p className="text-xs font-medium text-red-500 mt-1.5">{formErrors.email}</p>}
                   </div>
 
-                  {/* Phone Number */}
                   <div className="flex flex-col">
                     <label className="text-xs font-bold text-slate-800 uppercase tracking-widest mb-2 flex items-center space-x-1">
                       <span>Phone Number</span>
@@ -1345,7 +1412,6 @@ export default function App() {
                     {formErrors.phone && <p className="text-xs font-medium text-red-500 mt-1.5">{formErrors.phone}</p>}
                   </div>
 
-                  {/* Physical Address */}
                   <div className="flex flex-col">
                     <label className="text-xs font-bold text-slate-800 uppercase tracking-widest mb-2 flex items-center space-x-1">
                       <span>Physical Address / Location</span>
@@ -1370,7 +1436,6 @@ export default function App() {
 
                 </div>
 
-                {/* SIGNATURE SETUP UNIT */}
                 <div className="border-t border-slate-100 pt-7 mt-8">
                   <h3 className="text-xs font-extrabold text-slate-800 uppercase tracking-widest flex items-center space-x-2 mb-4">
                     <PenTool className="w-4 h-4 text-[#198754]" />
@@ -1379,7 +1444,6 @@ export default function App() {
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     
-                    {/* Signed Text Input */}
                     <div className="bg-slate-50 border border-slate-205 rounded-lg p-5">
                       <label className="text-xs font-bold text-slate-800 uppercase tracking-widest mb-1.5 block">
                         Signature Text (Handwritten font replacement)
@@ -1404,7 +1468,6 @@ export default function App() {
                       )}
                     </div>
 
-                    {/* Upload real signature scan */}
                     <div className="bg-slate-50 border border-slate-205 rounded-lg p-5 flex flex-col justify-between">
                       <div>
                         <span className="text-xs font-bold text-slate-800 uppercase tracking-widest mb-1.5 block">
@@ -1478,7 +1541,6 @@ export default function App() {
               </motion.div>
             )}
 
-            {/* STEP 1: PROFESSIONAL PROFILE BACKGROUND */}
             {activeStep === 1 && (
               <motion.div
                 key="step-1"
@@ -1500,7 +1562,6 @@ export default function App() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                  {/* Highest Education */}
                   <div className="flex flex-col">
                     <label className="text-xs font-bold text-slate-800 uppercase tracking-widest mb-2">
                       Highest Education Attained
@@ -1512,8 +1573,8 @@ export default function App() {
                       id="select-education"
                     >
                       <option value="Doctorate / PhD">Doctorate / PhD</option>
-                      <option value="Master’s Degree">Master’s Degree</option>
-                      <option value="Bachelor’s Degree">Bachelor’s Degree</option>
+                      <option value="Master's Degree">Master's Degree</option>
+                      <option value="Bachelor's Degree">Bachelor's Degree</option>
                       <option value="Advanced Diploma">Advanced Diploma</option>
                       <option value="Ordinary Diploma">Ordinary Diploma</option>
                       <option value="High School Certificate">High School Certificate</option>
@@ -1521,7 +1582,6 @@ export default function App() {
                     </select>
                   </div>
 
-                  {/* Years of Experience */}
                   <div className="flex flex-col">
                     <label className="text-xs font-bold text-slate-800 uppercase tracking-widest mb-2">
                       Years of Experience
@@ -1541,7 +1601,6 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* Key Skills */}
                   <div className="flex flex-col">
                     <label className="text-xs font-bold text-slate-800 uppercase tracking-widest mb-1 flex items-center justify-between">
                       <span>Key Skills & Certifications (Optional)</span>
@@ -1565,7 +1624,6 @@ export default function App() {
                     />
                     {formErrors.keySkills && <p className="text-xs font-medium text-red-500 mt-1.5">{formErrors.keySkills}</p>}
                     
-                    {/* Visual pills creator for skills */}
                     {professionalInfo.keySkills.trim() && (
                       <div className="flex flex-wrap gap-1.5 mt-3">
                         {professionalInfo.keySkills.split(',').map((tag, idx) => {
@@ -1603,7 +1661,6 @@ export default function App() {
               </motion.div>
             )}
 
-            {/* STEP 2: TARGET JOB DETAILS & FAST PORTAL INTEGRATION PRE-FILL */}
             {activeStep === 2 && (
               <motion.div
                 key="step-2"
@@ -1614,17 +1671,16 @@ export default function App() {
                 className="bg-white border border-slate-200 rounded-xl shadow-sm p-6 sm:p-10"
               >
                 
-                {/* JobsReport integration simulator board */}
                 {simulatedJobs.length > 0 && (
                   <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 mb-8">
                     <div className="flex items-center space-x-2 mb-3">
                       <Sparkles className="w-4 h-4 text-[#198754]" />
                       <h4 className="text-xs font-bold uppercase tracking-widest text-slate-800 font-sans">
-                        JobsReport.online Prefill API Simulator
+                        JobsReport.online Prefill API
                       </h4>
                     </div>
                     <p className="text-xs text-slate-500 mb-4 leading-relaxed">
-                      This represents opening a job listing page natively within JobsReport.online. Clicking a job card instantly auto-completes and structures all required inputs for high-speed drafting!
+                      Click a job card to instantly auto-complete the target job details!
                     </p>
                     
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -1674,7 +1730,6 @@ export default function App() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                   
-                  {/* Job Title */}
                   <div className="flex flex-col">
                     <label className="text-xs font-bold text-slate-800 uppercase tracking-widest mb-2 flex items-center space-x-1">
                       <span>Target Job Title</span>
@@ -1696,7 +1751,6 @@ export default function App() {
                     {formErrors.jobTitle && <p className="text-xs font-medium text-red-500 mt-1.5">{formErrors.jobTitle}</p>}
                   </div>
 
-                  {/* Company Name */}
                   <div className="flex flex-col">
                     <label className="text-xs font-bold text-slate-800 uppercase tracking-widest mb-2 flex items-center space-x-1">
                       <span>Company / Employer Name</span>
@@ -1718,7 +1772,6 @@ export default function App() {
                     {formErrors.companyName && <p className="text-xs font-medium text-red-500 mt-1.5">{formErrors.companyName}</p>}
                   </div>
 
-                  {/* Company Physical Address */}
                   <div className="flex flex-col">
                     <label className="text-xs font-bold text-slate-800 uppercase tracking-widest mb-2">
                       Company Address (Optional)
@@ -1732,14 +1785,13 @@ export default function App() {
                     />
                   </div>
 
-                  {/* Job URL if available with crawling support */}
                   <div className="flex flex-col">
                     <div className="flex justify-between items-center mb-1.5">
                       <label className="text-xs font-bold text-slate-800 uppercase tracking-widest">
                         Listing Web URL (Optional)
                       </label>
                       <span className="text-[10px] text-blue-600 font-bold normal-case font-sans">
-                        Read listing articles with AI! ⚡
+                        Read listing with AI! ⚡
                       </span>
                     </div>
 
@@ -1782,7 +1834,6 @@ export default function App() {
 
                 </div>
 
-                {/* Job Description details */}
                 <div className="flex flex-col mb-6">
                   <div className="flex justify-between items-center mb-2">
                     <label className="text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center space-x-1">
@@ -1830,7 +1881,6 @@ export default function App() {
               </motion.div>
             )}
 
-            {/* STEP 3: TARGET MARKET COUNTRY GUIDES & VERIFICATION */}
             {activeStep === 3 && (
               <motion.div
                 key="step-3"
@@ -1850,7 +1900,6 @@ export default function App() {
                   </p>
                 </div>
 
-                {/* Grid list of selectable countries */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3.5 mb-8">
                   {(Object.keys(COUNTRY_GUIDES) as TargetCountry[]).map((countryKey) => {
                     const countryData = COUNTRY_GUIDES[countryKey];
@@ -1887,7 +1936,6 @@ export default function App() {
                   })}
                 </div>
 
-                {/* Dynamic HR Expert Panel Coach */}
                 {targetCountry && (
                   <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 mb-8">
                     <div className="flex items-center space-x-2 text-[#0B5ED7] mb-3">
@@ -1930,7 +1978,6 @@ export default function App() {
                   </div>
                 )}
 
-                {/* targetLanguage Selection Segment */}
                 <div className="border-t border-slate-150 pt-6 mt-6 mb-8">
                   <span className="font-bold uppercase text-[10px] tracking-widest text-[#0B5ED7] block mb-2">
                     APPLICATION LETTER TARGET LANGUAGE
@@ -2012,14 +2059,11 @@ export default function App() {
         </div>
       </main>
 
-      {/* 2. LIVE DOCUMENT CORE STUDIO WORKSPACE SUITE (output sheet and ATS hub) */}
       {activeStep === 4 && generatedResult && (
         <div className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 flex flex-col md:flex-row gap-6">
           
-          {/* LEFT SUBCOLUMN: ATS PERFORMANCE AUDIT PANEL */}
           <div className="w-full md:w-[320px] space-y-6 flex-shrink-0 no-print" id="ats-hub-rail">
             
-            {/* MATCH SCORE PROMINENCE CARD */}
             <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
               <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold block mb-4 text-center">
                 Match Index
@@ -2027,7 +2071,6 @@ export default function App() {
 
               <div className="flex flex-col items-center justify-center">
                 
-                {/* SVG Circle visualizer */}
                 <div className="relative w-32 h-32 flex items-center justify-center mb-4">
                   
                   <svg className="w-full h-full transform -rotate-90">
@@ -2072,10 +2115,8 @@ export default function App() {
               </div>
             </div>
 
-            {/* KEY SKILL ALIGNMENTS MATCH CARD */}
             <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-5">
               
-              {/* Aligned Match Section */}
               <div>
                 <div className="flex items-center space-x-1.5 mb-2.5">
                   <CheckCircle className="w-4 h-4 text-[#198754]" />
@@ -2097,7 +2138,6 @@ export default function App() {
                 )}
               </div>
 
-              {/* Missing Aligned Section */}
               <div>
                 <div className="flex items-center space-x-1.5 mb-2.5">
                   <AlertTriangle className="w-4 h-4 text-amber-500" />
@@ -2123,7 +2163,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* STRATEGIC JOB SEEKER RECOMMENDATIONS OR CV IMPROVEMENT CORNERS */}
             <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
               
               <div>
@@ -2151,7 +2190,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* BUTTON TO GENERATE ANOTHER OPTION */}
             <button
               onClick={() => {
                 if (confirm('Are you sure you want to start a brand new letter draft? This will clear the current target job parameters but preserve your personal profile so you don\'t have to re-enter it.')) {
@@ -2175,10 +2213,8 @@ export default function App() {
             
           </div>
 
-          {/* RIGHT SUBCOLUMN: COHESIVE PAPER CANVAS STUDIO WORKBENCH */}
           <div className="flex-1 flex flex-col space-y-4">
             
-            {/* SMART REGIONAL PROFILE CONTEXT BANNER */}
             <div className="bg-[#0B5ED7]/5 border border-[#0B5ED7]/15 rounded-xl p-3.5 px-5 flex flex-wrap items-center justify-between gap-3 no-print shadow-xs">
               <div className="flex items-center space-x-2">
                 <div className="bg-[#0B5ED7]/10 p-1.5 rounded-lg">
@@ -2198,10 +2234,8 @@ export default function App() {
               </div>
             </div>
             
-            {/* VIEWING SWITCHES & DOCUMENT ACTIONS PANEL */}
             <div className="bg-white border border-slate-200 rounded-xl p-4 sm:px-6 flex flex-wrap items-center justify-between gap-4 no-print shadow-sm">
               
-              {/* Document Type Switch Button Tabs */}
               <div className="flex bg-slate-50 p-1 rounded-lg border border-slate-200">
                 <button
                   onClick={() => { setActiveTab('application'); setIsEditing(false); }}
@@ -2228,10 +2262,8 @@ export default function App() {
                 </button>
               </div>
 
-              {/* Action operations and layout triggers */}
               <div className="flex items-center space-x-2">
                 
-                {/* Restore Draft back option if user deletes content by mistake */}
                 {isEditing && (
                   <button
                     onClick={() => {
@@ -2251,11 +2283,9 @@ export default function App() {
                   </button>
                 )}
 
-                {/* Instant Inline Editor Toggle */}
                 <button
                   onClick={() => {
                     if (!isEditing) {
-                      // Strip any hidden HTML comment tags so editing area remains pure text
                       setEditedApplication(stripComments(editedApplication));
                       setEditedCover(stripComments(editedCover));
                     }
@@ -2272,7 +2302,6 @@ export default function App() {
                   <span className="hidden sm:inline">{isEditing ? 'Preview Sheet' : 'Quick Edit'}</span>
                 </button>
 
-                {/* Clipboard copy operations */}
                 <button
                   onClick={() => copyLetterToClipboard(activeTab === 'application' ? editedApplication : editedCover)}
                   className="px-3.5 py-2.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold transition-colors flex items-center space-x-1.5 cursor-pointer"
@@ -2282,7 +2311,6 @@ export default function App() {
                   <span>{copiedState ? 'Copied' : 'Copy Text'}</span>
                 </button>
 
-                {/* DOWNLOAD editable Word Document */}
                 <button
                   onClick={() => {
                     const currentTitle = activeTab === 'application' ? 'Application_Letter' : 'Cover_Letter';
@@ -2299,7 +2327,6 @@ export default function App() {
                   <span className="md:hidden">Word</span>
                 </button>
 
-                {/* HIGH FIDELITY DIRECT PDF DOWNLOAD */}
                 <button
                   onClick={() => {
                     const currentTitle = activeTab === 'application' ? 'Application_Letter' : 'Cover_Letter';
@@ -2312,7 +2339,6 @@ export default function App() {
                   <span>Download PDF</span>
                 </button>
 
-                {/* Print layout fallback */}
                 <button
                   onClick={() => {
                     setSaveFeedback('Launching browser printing stream... If nothing happens, click "Download PDF" or "Download Word" above. ✓');
@@ -2330,7 +2356,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* DOCUMENT DESIGN CONFIGURATOR CARD */}
             <div className="bg-white border border-slate-200 rounded-xl p-3 px-4 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600 no-print shadow-sm">
               <div className="flex items-center space-x-1 bg-slate-50 px-2.5 py-1 rounded border border-slate-200">
                 <Sliders className="w-3.5 h-3.5 text-slate-400" />
@@ -2339,7 +2364,6 @@ export default function App() {
               
               <div className="flex flex-wrap items-center gap-4">
                 
-                {/* Spacing margin selector */}
                 <div className="flex items-center space-x-1.5">
                   <span className="text-slate-400">Margins:</span>
                   <select
@@ -2353,7 +2377,6 @@ export default function App() {
                   </select>
                 </div>
 
-                {/* Font selector */}
                 <div className="flex items-center space-x-1.5">
                   <span className="text-slate-400">Font Scale:</span>
                   <select
@@ -2367,7 +2390,6 @@ export default function App() {
                   </select>
                 </div>
 
-                {/* Accent selector option */}
                 <div className="flex items-center space-x-1.5">
                   <span className="text-slate-400">Border:</span>
                   <div className="flex items-center space-x-1">
@@ -2393,7 +2415,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Save feedback & Editor restoration panel */}
             {saveFeedback && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
@@ -2454,11 +2475,9 @@ export default function App() {
               </div>
             )}
 
-            {/* THE MASTERPIECE SOLID A4 LINEN RECTANGLE */}
             <div className="bg-slate-50 border border-slate-200/80 p-2 sm:p-6 rounded-xl flex justify-center items-start overflow-x-auto print-container no-scrollbar shadow-xs">
               
               {isEditing ? (
-                /* Dynamic Custom Editing Sheet Container */
                 <textarea
                   className="w-full max-w-[210mm] min-h-[297mm] bg-white text-slate-800 border-2 border-slate-300 rounded-lg p-10 focus:outline-none focus:border-[#0B5ED7] focus:ring-2 focus:ring-[#0B5ED7]/25 font-mono text-xs leading-relaxed"
                   value={activeTab === 'application' ? editedApplication : editedCover}
@@ -2472,7 +2491,6 @@ export default function App() {
                   placeholder="Direct document block editor details..."
                 />
               ) : (
-                /* High Fidelity A4 Print layout template sheet representation */
                 <div 
                   id="printable-area"
                   className={`print-page w-full max-w-[210mm] min-h-[297mm] bg-white text-slate-900 border border-slate-200 rounded-lg relative transition-all duration-150 flex flex-col justify-between ${getMarginStyle()} ${getFontSizeStyle()}`}
@@ -2483,7 +2501,6 @@ export default function App() {
                   }}
                 >
                   
-                  {/* Top Header section holding user and job alignments details */}
                   <div className="space-y-6">
                     {(() => {
                       const activeText = activeTab === 'application' ? editedApplication : editedCover;
@@ -2493,7 +2510,6 @@ export default function App() {
 
                       if (!parsed.isParsed) {
                         return (
-                          /* Default Fallback Layout when text cannot be parsed */
                           <div className="space-y-6">
                             <div className="flex justify-between items-start border-b border-slate-100 pb-5">
                               <div>
@@ -2521,9 +2537,7 @@ export default function App() {
 
                       if (activeStandard === 'East African Formal') {
                         return (
-                          /* 1. East African Formal */
                           <div className="space-y-5">
-                            {/* Applicant details aligned top right */}
                             <div className="flex flex-col items-end text-right ml-auto max-w-[320px] text-[11px] text-slate-650 space-y-1.5 leading-tight">
                               <h1 className="font-sans font-bold text-[13px] text-slate-900 leading-snug">
                                 {personalInfo.fullName}
@@ -2538,12 +2552,10 @@ export default function App() {
                               </p>
                             </div>
 
-                            {/* Employer details aligned left */}
                             <div className="text-left max-w-[320px] text-[11.5px] text-slate-600 space-y-0.5 leading-snug pt-4">
                               <div className="whitespace-pre-line">{stripMarkdownAndHtml(parsed.employer)}</div>
                             </div>
 
-                            {/* Bold and underlined reference line */}
                             {parsed.subject && (
                               <div className="py-2">
                                 <p className="font-bold underline uppercase text-slate-900 text-xs text-center md:text-left leading-normal">
@@ -2552,17 +2564,14 @@ export default function App() {
                               </div>
                             )}
 
-                            {/* Greeting */}
                             <div className="text-left text-[11.5px] font-semibold text-slate-800">
                               {stripMarkdownAndHtml(parsed.salutation)}
                             </div>
 
-                            {/* Body paragraphs */}
                             <div className="whitespace-pre-line text-slate-800 leading-relaxed font-normal tracking-wide text-[11.5px] space-y-4 pt-1">
                               {stripMarkdownAndHtml(parsed.body)}
                             </div>
 
-                            {/* Closing */}
                             <div className="pt-2 text-left text-[11.5px]">
                               <p className="font-semibold text-slate-800">{stripMarkdownAndHtml(parsed.closing)}</p>
                             </div>
@@ -2572,7 +2581,6 @@ export default function App() {
 
                       if (activeStandard === 'UK Professional') {
                         return (
-                          /* 2. UK Professional */
                           <div className="space-y-4 text-[11.5px]">
                             <div className="flex justify-between items-center border-b border-slate-100 pb-3 mb-2">
                               <div>
@@ -2610,7 +2618,6 @@ export default function App() {
 
                       if (activeStandard === 'North American ATS') {
                         return (
-                          /* 3. North American ATS */
                           <div className="space-y-4 text-[11px] font-sans tracking-normal leading-relaxed text-slate-800">
                             <div className="border-b border-slate-200 pb-3 mb-2">
                               <h1 className="font-sans font-extrabold text-base text-slate-900 uppercase tracking-tight">{personalInfo.fullName}</h1>
@@ -2645,7 +2652,6 @@ export default function App() {
 
                       if (activeStandard === 'Gulf Professional') {
                         return (
-                          /* 4. Gulf Professional */
                           <div className="space-y-4 text-[11.5px] leading-snug">
                             <div className="flex justify-between items-start border-b-2 border-slate-900 pb-4 mb-2">
                               <div>
@@ -2689,7 +2695,6 @@ export default function App() {
                         );
                       }
 
-                      /* 5. European Corporate fallback */
                       return (
                         <div className="space-y-4 text-[11.5px] font-sans">
                           <div className="flex justify-between items-start border-b border-slate-200 pb-4 mb-2">
@@ -2727,10 +2732,8 @@ export default function App() {
                     })()}
                   </div>
 
-                  {/* BOTTOM SIGNATURE BLOCK ZONE ON PAPER */}
                   <div className="pt-8 flex flex-col items-start space-y-1">
                     
-                    {/* Render corresponding signature model chosen */}
                     {layoutConfig.signatureType === 'uploaded' && personalInfo.signatureImage ? (
                       <div className="relative py-1">
                         <img 
@@ -2769,7 +2772,6 @@ export default function App() {
 
             </div>
 
-            {/* PRINT ADVICE BANNER FOOTER */}
             <div className="bg-emerald-50 border border-emerald-100 text-[11.5px] rounded-xl p-4 text-slate-600 flex items-start space-x-2.5 no-print">
               <Info className="w-5 h-5 text-[#198754] flex-shrink-0 mt-0.5" />
               <div>
@@ -2784,7 +2786,6 @@ export default function App() {
         </div>
       )}
 
-      {/* 3. CORE LOADING SCREEN WITH DYNAMIC CHECKS */}
       <AnimatePresence>
         {isGenerating && (
           <motion.div
@@ -2821,12 +2822,10 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* 4. PAST GENERATIONS ARCHIVED DRAWER drawer portal */}
       <AnimatePresence>
         {showHistoryDrawer && (
           <div className="fixed inset-0 z-40 overflow-hidden no-print">
             
-            {/* Backdrop cover overlay */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 0.5 }}
@@ -2837,7 +2836,6 @@ export default function App() {
 
             <div className="absolute inset-y-0 right-0 max-w-sm w-full bg-white shadow-xl flex flex-col justify-between border-l border-slate-200">
               
-              {/* Drawer header */}
               <div className="p-5 border-b border-slate-200 flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <History className="w-4 h-4 text-[#0B5ED7]" />
@@ -2852,18 +2850,16 @@ export default function App() {
                 </button>
               </div>
 
-              {/* Drawer search engine filter */}
               <div className="p-4 border-b border-slate-100 bg-slate-50/50">
                 <input
                   type="text"
-                  placeholder="Query company configurations..."
+                  placeholder="Search by company or job title..."
                   className="w-full px-3 py-1.5 border border-slate-200 rounded text-xs focus:border-slate-400 focus:outline-none bg-white text-slate-750"
                   value={historySearchQuery}
                   onChange={(e) => setHistorySearchQuery(e.target.value)}
                 />
               </div>
 
-              {/* Drawer main log roll list */}
               <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/20">
                 {letterHistory.filter(item => 
                   item.request.jobInfo.companyName.toLowerCase().includes(historySearchQuery.toLowerCase()) ||
@@ -2917,7 +2913,6 @@ export default function App() {
                 )}
               </div>
 
-              {/* Drawer footer statistics */}
               <div className="p-4 bg-slate-50 border-t border-slate-100 text-center text-[9px] text-slate-400 font-bold uppercase tracking-wider">
                 JobsReport database persistent archive storage
               </div>
@@ -2927,7 +2922,6 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* GLOBAL HIGH-BRAND LEVEL HUMAN TRUTHS CENTERED FOOTER */}
       <footer className="no-print bg-slate-900 border-t border-slate-800 text-slate-400 py-10 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
           
@@ -2943,7 +2937,7 @@ export default function App() {
 
           <div className="text-center md:text-right space-y-1 text-xs">
             <p className="font-semibold text-slate-300">&#169; 2026 JobsReport.online Letter Studio</p>
-            <p className="text-slate-500 font-medium">Safe & secure server-side Gemini encryption protects candidate data</p>
+            <p className="text-slate-500 font-medium">Safe & secure server-side encryption protects candidate data</p>
             <div className="flex items-center justify-center md:justify-end gap-1 text-[11px] text-pink-700 font-bold uppercase tracking-wider mt-3">
               <span>Made with</span>
               <Heart className="w-3 h-3 fill-pink-700 stroke-none" />
