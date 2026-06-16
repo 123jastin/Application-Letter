@@ -1,0 +1,6 @@
+{
+  "name": "JobsReport Letter Generator",
+  "description": "AI-powered professional application and cover letter builder for JobsReport.online.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
