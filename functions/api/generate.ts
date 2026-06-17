@@ -22,6 +22,17 @@ function getRegionalStandard(country: string): string {
   return 'European Corporate';
 }
 
+function formatCompanyAddress(companyName: string, companyAddress: string): string {
+  if (!companyAddress) return companyName;
+  
+  const addressParts = companyAddress
+    .split(/[,\n]/)
+    .map((part: string) => part.trim())
+    .filter(Boolean);
+  
+  return [companyName, ...addressParts].join('\n');
+}
+
 export const onRequestPost: PagesFunction<Env> = async (context) => {
   const { GROQ_API_KEY } = context.env;
 
@@ -43,6 +54,18 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       year: 'numeric',
     });
 
+    // Format addresses on separate lines
+    const applicantAddressLines = data.personalInfo.address
+      .split(/[,\n]/)
+      .map((p: string) => p.trim())
+      .filter(Boolean)
+      .join('\n');
+
+    const companyBlock = formatCompanyAddress(
+      data.jobInfo.companyName,
+      data.jobInfo.companyAddress || ''
+    );
+
     // ─── Step 1: Generate Application Letter ───────────
     const appResult = await groq.chat.completions.create({
       model: 'llama-3.1-8b-instant',
@@ -55,7 +78,7 @@ CRITICAL FORMATTING RULES:
 1. The <!-- SECTION_CLOSING --> must contain ONLY "Yours sincerely," — do NOT add the applicant name here
 2. The <!-- SECTION_SIGNATURE --> must contain ONLY the applicant's full name — no phone, no email, no address
 3. NEVER repeat the applicant name twice
-4. Company address must be on SEPARATE lines (company name on one line, address on the next)
+4. Keep all addresses EXACTLY as provided — each part on its own line
 5. Keep the letter professional and clean
 
 Example of CORRECT format:
@@ -81,7 +104,9 @@ APPLICANT DETAILS:
 Full Name: ${fullName}
 Phone: ${data.personalInfo.phone}
 Email: ${data.personalInfo.email}
-Address: ${data.personalInfo.address}
+Address:
+${applicantAddressLines}
+
 Education: ${data.professionalInfo.highestEducation}
 Experience: ${data.professionalInfo.yearsOfExperience} years
 Current Position: ${data.professionalInfo.currentPosition}
@@ -89,8 +114,9 @@ Skills: ${data.professionalInfo.keySkills || 'Relevant professional skills'}
 
 JOB DETAILS:
 Position: ${data.jobInfo.jobTitle}
-Company: ${data.jobInfo.companyName}
-Company Address: ${data.jobInfo.companyAddress || 'Dar es Salaam, Tanzania'}
+Company Address (each part on its own line):
+${companyBlock}
+
 Job Description: ${data.jobInfo.jobDescription}
 
 TARGET COUNTRY: ${data.targetCountry}
@@ -100,15 +126,14 @@ FORMAT EXACTLY WITH THESE SECTION MARKERS:
 
 <!-- SECTION_APPLICANT -->
 ${fullName}
-${data.personalInfo.address}
+${applicantAddressLines}
 ${data.personalInfo.phone} | ${data.personalInfo.email}
 
 <!-- SECTION_DATE -->
 ${today}
 
 <!-- SECTION_EMPLOYER -->
-${data.jobInfo.companyName}
-${data.jobInfo.companyAddress || 'Dar es Salaam, Tanzania'}
+${companyBlock}
 
 <!-- SECTION_SUBJECT -->
 REF: APPLICATION FOR ${data.jobInfo.jobTitle.toUpperCase()}
@@ -117,7 +142,7 @@ REF: APPLICATION FOR ${data.jobInfo.jobTitle.toUpperCase()}
 Dear Hiring Manager,
 
 <!-- SECTION_BODY -->
-[Write 3-4 professional paragraphs: introduction expressing interest, relevant experience matching the job description, specific skills and achievements, why you want to work at this company, and a confident closing statement]
+[Write 3-4 professional paragraphs: introduction, relevant experience matching the job, skills and achievements, why this company, confident closing]
 
 <!-- SECTION_CLOSING -->
 Yours sincerely,
@@ -143,8 +168,7 @@ ${fullName}`
 CRITICAL RULES:
 1. <!-- SECTION_CLOSING --> must be ONLY "Yours sincerely," — no name here
 2. <!-- SECTION_SIGNATURE --> must be ONLY the applicant's full name
-3. NEVER repeat the name twice
-4. Write with warmth and genuine interest`
+3. NEVER repeat the name twice`
         },
         {
           role: 'user',
@@ -160,7 +184,7 @@ Country: ${data.targetCountry}
 FORMAT:
 
 <!-- SECTION_BODY -->
-[Engaging cover letter: opening hook, 2-3 key achievements relevant to the role, genuine interest in the company, call to action]
+[Engaging cover letter: opening hook, 2-3 achievements matching the role, interest in company, call to action]
 
 <!-- SECTION_CLOSING -->
 Yours sincerely,
@@ -181,7 +205,7 @@ ${fullName}`
       messages: [
         {
           role: 'system',
-          content: 'Respond with ONLY valid JSON inside curly braces. No markdown, no code blocks, no extra text whatsoever.'
+          content: 'Respond with ONLY valid JSON inside curly braces. No markdown, no code blocks, no extra text.'
         },
         {
           role: 'user',
@@ -195,7 +219,7 @@ EXPERIENCE: ${data.professionalInfo.yearsOfExperience} years
 APPLICATION LETTER:
 ${applicationLetter.substring(0, 1500)}
 
-Return ONLY this JSON (nothing else):
+Return ONLY this JSON:
 {"matchScore":75,"matchingSkills":["skill1","skill2"],"missingSkills":["skill3"],"recommendations":["tip1","tip2","tip3"],"cvImprovements":["cv1","cv2","cv3"]}`
         }
       ],
