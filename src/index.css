@@ -67,8 +67,9 @@
   .print-page {
     width: 210mm !important;
     min-height: 297mm !important;
+    max-height: 297mm !important;
     margin: 0 !important;
-    padding: 20mm !important; /* Proper margin standard */
+    padding: 14mm 16mm !important;
     box-sizing: border-box !important;
     background: #ffffff !important;
     background-color: #ffffff !important;
@@ -77,6 +78,10 @@
     border: none !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    overflow: hidden !important;
   }
 
   /* Retain high-fidelity color presets for borders and text */
@@ -86,5 +91,67 @@
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
-}
 
+  /* Compact spacing overrides */
+  .print-page p {
+    margin-bottom: 0.15rem !important;
+    margin-top: 0.15rem !important;
+    line-height: 1.35 !important;
+  }
+
+  .print-page div {
+    line-height: 1.35 !important;
+  }
+
+  /* Reduce gaps between sections */
+  .print-page .space-y-5 > * + * {
+    margin-top: 0.4rem !important;
+  }
+
+  .print-page .space-y-4 > * + * {
+    margin-top: 0.3rem !important;
+  }
+
+  .print-page .space-y-6 > * + * {
+    margin-top: 0.4rem !important;
+  }
+
+  /* Force signature section to stay on page */
+  .print-page .pt-8 {
+    padding-top: 0.5rem !important;
+  }
+
+  .print-page .pt-6 {
+    padding-top: 0.4rem !important;
+  }
+
+  .print-page .pt-4 {
+    padding-top: 0.3rem !important;
+  }
+
+  .print-page .pb-5 {
+    padding-bottom: 0.3rem !important;
+  }
+
+  .print-page .mb-6 {
+    margin-bottom: 0.4rem !important;
+  }
+
+  .print-page .mb-4 {
+    margin-bottom: 0.3rem !important;
+  }
+
+  .print-page .mb-2 {
+    margin-bottom: 0.15rem !important;
+  }
+
+  /* Prevent page breaks inside content */
+  .print-page {
+    page-break-inside: avoid !important;
+  }
+
+  /* Scale down signature image */
+  .print-page img {
+    max-height: 35px !important;
+  }
+}
