@@ -22,15 +22,38 @@ function getRegionalStandard(country: string): string {
   return 'European Corporate';
 }
 
-function formatCompanyAddress(companyName: string, companyAddress: string): string {
-  if (!companyAddress) return companyName;
+function formatAddressLines(address: string): string {
+  if (!address) return '';
   
-  const addressParts = companyAddress
+  // Split by comma OR "P.o.Box" pattern OR newlines
+  let cleaned = address.trim();
+  
+  // If there's "P.o.Box" or "P.O.Box" followed by text, split it
+  cleaned = cleaned.replace(/(P\.?[oO]\.?\s*Box\s*\d+)\s+([A-Z])/, '$1\n$2');
+  
+  // Split remaining by commas and newlines
+  const parts = cleaned
     .split(/[,\n]/)
-    .map((part: string) => part.trim())
+    .map((p: string) => p.trim())
     .filter(Boolean);
   
-  return [companyName, ...addressParts].join('\n');
+  return parts.join('\n');
+}
+
+function formatCompanyBlock(companyName: string, companyAddress: string): string {
+  if (!companyAddress) return companyName;
+  
+  let address = companyAddress.trim();
+  
+  // Split P.o.Box from location
+  address = address.replace(/(P\.?[oO]\.?\s*Box\s*\d+)\s+([A-Z])/, '$1\n$2');
+  
+  const parts = address
+    .split(/[,\n]/)
+    .map((p: string) => p.trim())
+    .filter(Boolean);
+  
+  return [companyName, ...parts].join('\n');
 }
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
@@ -54,14 +77,13 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       year: 'numeric',
     });
 
-    // Format addresses on separate lines
-    const applicantAddressLines = data.personalInfo.address
-      .split(/[,\n]/)
-      .map((p: string) => p.trim())
-      .filter(Boolean)
-      .join('\n');
+    const applicantBlock = [
+      fullName,
+      formatAddressLines(data.personalInfo.address),
+      `${data.personalInfo.phone} | ${data.personalInfo.email}`
+    ].filter(Boolean).join('\n');
 
-    const companyBlock = formatCompanyAddress(
+    const companyBlock = formatCompanyBlock(
       data.jobInfo.companyName,
       data.jobInfo.companyAddress || ''
     );
@@ -75,20 +97,23 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           content: `You are a professional HR consultant writing job application letters.
 
 CRITICAL FORMATTING RULES:
-1. The <!-- SECTION_CLOSING --> must contain ONLY "Yours sincerely," — do NOT add the applicant name here
+1. The <!-- SECTION_CLOSING --> must contain ONLY "Yours sincerely," — no name here
 2. The <!-- SECTION_SIGNATURE --> must contain ONLY the applicant's full name — no phone, no email, no address
 3. NEVER repeat the applicant name twice
-4. Keep all addresses EXACTLY as provided — each part on its own line
-5. Keep the letter professional and clean
+4. Keep all addresses on SEPARATE lines exactly as provided
+5. Keep the letter CONCISE — maximum 250-300 words total so it fits on one A4 page
+6. Use SHORT paragraphs (3-4 sentences each)
+7. No fluff or filler — every sentence must add value
+8. The letter must be COMPACT — minimal spacing between sections
 
-Example of CORRECT format:
+Example of CORRECT closing:
 <!-- SECTION_CLOSING -->
 Yours sincerely,
 
 <!-- SECTION_SIGNATURE -->
 Jastin Beda
 
-Example of WRONG format (DO NOT DO THIS):
+WRONG (do not do):
 <!-- SECTION_CLOSING -->
 Yours sincerely, Jastin Beda
 
@@ -98,36 +123,29 @@ Phone: +255...`
         },
         {
           role: 'user',
-          content: `Write a professional job application letter.
+          content: `Write a COMPACT professional job application letter that fits on ONE PAGE.
 
-APPLICANT DETAILS:
-Full Name: ${fullName}
-Phone: ${data.personalInfo.phone}
-Email: ${data.personalInfo.email}
-Address:
-${applicantAddressLines}
+APPLICANT:
+${applicantBlock}
 
 Education: ${data.professionalInfo.highestEducation}
-Experience: ${data.professionalInfo.yearsOfExperience} years
-Current Position: ${data.professionalInfo.currentPosition}
+Experience: ${data.professionalInfo.yearsOfExperience} years as ${data.professionalInfo.currentPosition}
 Skills: ${data.professionalInfo.keySkills || 'Relevant professional skills'}
 
-JOB DETAILS:
+JOB:
 Position: ${data.jobInfo.jobTitle}
-Company Address (each part on its own line):
+Company:
 ${companyBlock}
 
-Job Description: ${data.jobInfo.jobDescription}
+Description: ${data.jobInfo.jobDescription}
 
-TARGET COUNTRY: ${data.targetCountry}
-TODAY'S DATE: ${today}
+Country: ${data.targetCountry}
+Date: ${today}
 
-FORMAT EXACTLY WITH THESE SECTION MARKERS:
+KEEP IT SHORT — 250 words maximum. Use EXACT markers:
 
 <!-- SECTION_APPLICANT -->
-${fullName}
-${applicantAddressLines}
-${data.personalInfo.phone} | ${data.personalInfo.email}
+${applicantBlock}
 
 <!-- SECTION_DATE -->
 ${today}
@@ -142,49 +160,7 @@ REF: APPLICATION FOR ${data.jobInfo.jobTitle.toUpperCase()}
 Dear Hiring Manager,
 
 <!-- SECTION_BODY -->
-[Write 3-4 professional paragraphs: introduction, relevant experience matching the job, skills and achievements, why this company, confident closing]
-
-<!-- SECTION_CLOSING -->
-Yours sincerely,
-
-<!-- SECTION_SIGNATURE -->
-${fullName}`
-        }
-      ],
-      temperature: 0.7,
-      max_tokens: 2048,
-    });
-
-    const applicationLetter = appResult.choices[0]?.message?.content || '';
-
-    // ─── Step 2: Generate Cover Letter ─────────────────
-    const coverResult = await groq.chat.completions.create({
-      model: 'llama-3.1-8b-instant',
-      messages: [
-        {
-          role: 'system',
-          content: `You are a career coach writing cover letters.
-
-CRITICAL RULES:
-1. <!-- SECTION_CLOSING --> must be ONLY "Yours sincerely," — no name here
-2. <!-- SECTION_SIGNATURE --> must be ONLY the applicant's full name
-3. NEVER repeat the name twice`
-        },
-        {
-          role: 'user',
-          content: `Write a compelling cover letter.
-
-APPLICANT: ${fullName}
-Background: ${data.professionalInfo.highestEducation}, ${data.professionalInfo.yearsOfExperience} years as ${data.professionalInfo.currentPosition}
-Skills: ${data.professionalInfo.keySkills || 'Professional expertise'}
-Target: ${data.jobInfo.jobTitle} at ${data.jobInfo.companyName}
-Job Description: ${data.jobInfo.jobDescription.substring(0, 500)}
-Country: ${data.targetCountry}
-
-FORMAT:
-
-<!-- SECTION_BODY -->
-[Engaging cover letter: opening hook, 2-3 achievements matching the role, interest in company, call to action]
+[3 short paragraphs: intro + 1 key qualification match + closing]
 
 <!-- SECTION_CLOSING -->
 Yours sincerely,
@@ -197,6 +173,48 @@ ${fullName}`
       max_tokens: 1536,
     });
 
+    const applicationLetter = appResult.choices[0]?.message?.content || '';
+
+    // ─── Step 2: Generate Cover Letter ─────────────────
+    const coverResult = await groq.chat.completions.create({
+      model: 'llama-3.1-8b-instant',
+      messages: [
+        {
+          role: 'system',
+          content: `Write a COMPACT cover letter. 
+
+RULES:
+1. <!-- SECTION_CLOSING --> only "Yours sincerely," — no name
+2. <!-- SECTION_SIGNATURE --> only applicant name
+3. Keep it SHORT — 150-200 words max
+4. Fit on one page`
+        },
+        {
+          role: 'user',
+          content: `Write a short cover letter.
+
+APPLICANT: ${fullName}
+Background: ${data.professionalInfo.highestEducation}, ${data.professionalInfo.yearsOfExperience} years
+Skills: ${data.professionalInfo.keySkills || 'Professional'}
+Target: ${data.jobInfo.jobTitle} at ${data.jobInfo.companyName}
+Job: ${data.jobInfo.jobDescription.substring(0, 300)}
+Country: ${data.targetCountry}
+
+FORMAT:
+<!-- SECTION_BODY -->
+[Short cover: hook + 1 achievement + interest + call to action - 150 words max]
+
+<!-- SECTION_CLOSING -->
+Yours sincerely,
+
+<!-- SECTION_SIGNATURE -->
+${fullName}`
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 1024,
+    });
+
     const coverLetter = coverResult.choices[0]?.message?.content || '';
 
     // ─── Step 3: ATS Analysis ──────────────────────────
@@ -205,21 +223,21 @@ ${fullName}`
       messages: [
         {
           role: 'system',
-          content: 'Respond with ONLY valid JSON inside curly braces. No markdown, no code blocks, no extra text.'
+          content: 'Respond with ONLY valid JSON. No markdown, no code blocks, no extra text.'
         },
         {
           role: 'user',
-          content: `Analyze this application for ATS compatibility.
+          content: `ATS Analysis:
 
-JOB TITLE: ${data.jobInfo.jobTitle}
-JOB DESCRIPTION: ${data.jobInfo.jobDescription.substring(0, 400)}
-CANDIDATE SKILLS: ${data.professionalInfo.keySkills || 'General professional'}
-EXPERIENCE: ${data.professionalInfo.yearsOfExperience} years
+Job: ${data.jobInfo.jobTitle}
+Description: ${data.jobInfo.jobDescription.substring(0, 400)}
+Skills: ${data.professionalInfo.keySkills || 'General'}
+Experience: ${data.professionalInfo.yearsOfExperience} years
 
-APPLICATION LETTER:
+Letter:
 ${applicationLetter.substring(0, 1500)}
 
-Return ONLY this JSON:
+Return ONLY:
 {"matchScore":75,"matchingSkills":["skill1","skill2"],"missingSkills":["skill3"],"recommendations":["tip1","tip2","tip3"],"cvImprovements":["cv1","cv2","cv3"]}`
         }
       ],
@@ -244,7 +262,6 @@ Return ONLY this JSON:
       // Use defaults
     }
 
-    // ─── Step 4: Return Response ──────────────────────
     return new Response(JSON.stringify({
       id: `letter-${Date.now()}`,
       createdAt: new Date().toISOString(),
