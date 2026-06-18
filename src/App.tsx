@@ -315,21 +315,56 @@ export default function App() {
   const [isDraggingFile, setIsDraggingFile] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Auto-save ALL form data to localStorage
+  useEffect(() => {
+    const formData = {
+      personalInfo,
+      personalPOBox,
+      personalCity,
+      personalRegion,
+      professionalInfo,
+      jobInfo,
+      companyPOBox,
+      companyDistrict,
+      companyRegion,
+      companyCountry,
+      targetCountry,
+      targetLanguage,
+      layoutConfig,
+    };
+    localStorage.setItem('jr_all_form_data', JSON.stringify(formData));
+  }, [
+    personalInfo, personalPOBox, personalCity, personalRegion,
+    professionalInfo, jobInfo, companyPOBox, companyDistrict,
+    companyRegion, companyCountry, targetCountry, targetLanguage, layoutConfig
+  ]);
+
   // Load baseline values from localStorage and cloud
   useEffect(() => {
-    const savedPersonalInfo = localStorage.getItem('jr_personal_info');
-    if (savedPersonalInfo) {
+    // Restore all form data
+    const savedFormData = localStorage.getItem('jr_all_form_data');
+    if (savedFormData) {
       try {
-        const info = JSON.parse(savedPersonalInfo);
-        setPersonalInfo(info);
-        if (info.email) {
-          fetchLetterHistory(info.email);
-        }
+        const data = JSON.parse(savedFormData);
+        if (data.personalInfo) setPersonalInfo(data.personalInfo);
+        if (data.personalPOBox) setPersonalPOBox(data.personalPOBox);
+        if (data.personalCity) setPersonalCity(data.personalCity);
+        if (data.personalRegion) setPersonalRegion(data.personalRegion);
+        if (data.professionalInfo) setProfessionalInfo(data.professionalInfo);
+        if (data.jobInfo) setJobInfo(data.jobInfo);
+        if (data.companyPOBox) setCompanyPOBox(data.companyPOBox);
+        if (data.companyDistrict) setCompanyDistrict(data.companyDistrict);
+        if (data.companyRegion) setCompanyRegion(data.companyRegion);
+        if (data.companyCountry) setCompanyCountry(data.companyCountry);
+        if (data.targetCountry) setTargetCountry(data.targetCountry);
+        if (data.targetLanguage) setTargetLanguage(data.targetLanguage);
+        if (data.layoutConfig) setLayoutConfig(data.layoutConfig);
       } catch (e) {
-        console.error("Failed to parse personal info");
+        console.error("Failed to restore form data");
       }
     }
 
+    // Restore letter history
     const savedHistory = localStorage.getItem('jr_letters_history');
     if (savedHistory) {
       try {
@@ -337,6 +372,17 @@ export default function App() {
       } catch (e) {
         console.error("Failed to parse history");
       }
+    }
+
+    // Load cloud history
+    const savedInfo = localStorage.getItem('jr_all_form_data');
+    if (savedInfo) {
+      try {
+        const data = JSON.parse(savedInfo);
+        if (data.personalInfo?.email) {
+          fetchLetterHistory(data.personalInfo.email);
+        }
+      } catch (e) {}
     }
   }, []);
 
@@ -635,9 +681,17 @@ export default function App() {
         personalRegion,
       ].filter(Boolean).join(', ');
 
+      // Filter education - don't show Standard 7, Form 4, Form 6, High School
+      const lowEducation = ['standard 7', 'standard seven', 'form 4', 'form four', 
+        'form 6', 'form six', 'high school', 'high-school', 'secondary', 'o-level', 'a-level'];
+
+      const educationToShow = lowEducation.some(term => 
+        professionalInfo.highestEducation.toLowerCase().includes(term)
+      ) ? '' : professionalInfo.highestEducation;
+
       // Build company address from structured fields
       const structuredCompanyAddress = [
-        companyPOBox,
+        companyPOBox ? `P.O. Box ${companyPOBox}` : '',
         companyDistrict,
         companyRegion,
         companyCountry,
@@ -654,7 +708,10 @@ export default function App() {
             ...personalInfo,
             address: fullPersonalAddress, // Override with structured address
           },
-          professionalInfo,
+          professionalInfo: {
+            ...professionalInfo,
+            highestEducation: educationToShow, // Filtered education
+          },
           jobInfo: {
             ...jobInfo,
             companyAddress: finalCompanyAddress, // Use structured address
@@ -1280,22 +1337,18 @@ export default function App() {
 
                   <div className="flex flex-col">
                     <label className="text-xs font-bold text-slate-800 uppercase tracking-widest mb-2">
-                      Highest Education Attained
+                      Education Details
                     </label>
-                    <select
-                      className="w-full px-3 py-2 bg-slate-50 border-2 border-slate-300 rounded-md text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B5ED7]/25 focus:border-[#0B5ED7] transition-all bg-no-repeat"
+                    <input
+                      type="text"
+                      className="w-full px-3 py-2.5 bg-slate-50 border-2 border-slate-300 rounded-md text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B5ED7]/25 focus:border-[#0B5ED7] transition-all"
+                      placeholder="e.g. Bachelor of Education with Special Needs"
                       value={professionalInfo.highestEducation}
                       onChange={(e) => setProfessionalInfo({ ...professionalInfo, highestEducation: e.target.value })}
-                      id="select-education"
-                    >
-                      <option value="Doctorate / PhD">Doctorate / PhD</option>
-                      <option value="Master's Degree">Master's Degree</option>
-                      <option value="Bachelor's Degree">Bachelor's Degree</option>
-                      <option value="Advanced Diploma">Advanced Diploma</option>
-                      <option value="Ordinary Diploma">Ordinary Diploma</option>
-                      <option value="High School/Secondary Certificate">High School Certificate</option>
-                      <option value="Other Certification">Professional Certification Only</option>
-                    </select>
+                    />
+                    <p className="text-[10px] text-amber-600 mt-1.5 leading-tight font-medium">
+                      This will appear in your application letter. Leave blank or write "N/A" if you don't want it shown.
+                    </p>
                   </div>
 
                   <div className="flex flex-col">
@@ -1317,7 +1370,7 @@ export default function App() {
                     </div>
                   </div>
 
-                  <div className="flex flex-col">
+                  <div className="flex flex-col md:col-span-2">
                     <label className="text-xs font-bold text-slate-800 uppercase tracking-widest mb-1 flex items-center justify-between">
                       <span>Key Skills & Certifications (Optional)</span>
                       <span className="text-[10px] text-blue-600 font-bold normal-case font-sans">
@@ -1329,7 +1382,7 @@ export default function App() {
                     </p>
                     <input
                       type="text"
-                      className="w-full px-3 py-2 bg-slate-50 border-2 border-slate-300 rounded-md text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B5ED7]/25 focus:border-[#0B5ED7] transition-all"
+                      className="w-full px-3 py-2.5 bg-slate-50 border-2 border-slate-300 rounded-md text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B5ED7]/25 focus:border-[#0B5ED7] transition-all"
                       placeholder="e.g. React, Node.js, SQL, Team Management (comma separated)"
                       value={professionalInfo.keySkills}
                       onChange={(e) => {
@@ -1426,18 +1479,27 @@ export default function App() {
                     {formErrors.companyName && <p className="text-xs font-medium text-red-500 mt-1.5">{formErrors.companyName}</p>}
                   </div>
 
-                  {/* P.O. Box */}
+                  {/* P.O. Box - Numbers Only */}
                   <div className="flex flex-col">
                     <label className="text-xs font-bold text-slate-800 uppercase tracking-widest mb-2">
                       P.O. Box
                     </label>
-                    <input
-                      type="text"
-                      className="w-full px-3 py-2.5 bg-slate-50 border-2 border-slate-300 rounded-md text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B5ED7]/25 focus:border-[#0B5ED7] transition-all"
-                      placeholder="e.g. P.O. Box 7234"
-                      value={companyPOBox}
-                      onChange={(e) => setCompanyPOBox(e.target.value)}
-                    />
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400 font-medium pointer-events-none">
+                        P.O. Box
+                      </span>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        className="w-full pl-[72px] pr-3 py-2.5 bg-slate-50 border-2 border-slate-300 rounded-md text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B5ED7]/25 focus:border-[#0B5ED7] transition-all"
+                        placeholder="e.g. 7234"
+                        value={companyPOBox}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/[^0-9]/g, '');
+                          setCompanyPOBox(val);
+                        }}
+                      />
+                    </div>
                   </div>
 
                   {/* District */}
