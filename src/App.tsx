@@ -864,8 +864,8 @@ export default function App() {
 
   const getFontSizeStyle = () => {
     switch (layoutConfig.fontSize) {
-      case 'small': return 'text-[13px] leading-[1.5] text-slate-900 font-normal';
-      case 'large': return 'text-[15px] leading-[1.6] text-slate-900 font-normal';
+      case 'small': return 'text-[15px] leading-[1.5] text-slate-900 font-normal';
+      case 'large': return 'text-[17px] leading-[1.6] text-slate-900 font-normal';
       default: return 'text-[14px] leading-[1.5] text-slate-900 font-normal';
     }
   };
@@ -1243,7 +1243,7 @@ export default function App() {
                       <option value="Bachelor's Degree">Bachelor's Degree</option>
                       <option value="Advanced Diploma">Advanced Diploma</option>
                       <option value="Ordinary Diploma">Ordinary Diploma</option>
-                      <option value="High School Certificate">High School Certificate</option>
+                      <option value="High School/Secondary Certificate">High School Certificate</option>
                       <option value="Other Certification">Professional Certification Only</option>
                     </select>
                   </div>
