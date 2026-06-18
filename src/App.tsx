@@ -314,7 +314,6 @@ export default function App() {
       try {
         const info = JSON.parse(savedPersonalInfo);
         setPersonalInfo(info);
-        // Load cloud history if email exists
         if (info.email) {
           fetchLetterHistory(info.email);
         }
@@ -342,7 +341,6 @@ export default function App() {
     localStorage.setItem('jr_personal_info', JSON.stringify(info));
   };
 
-  // Fetch simulated jobs from Cloudflare backend
   const fetchSimulatedJobs = async () => {
     try {
       const res = await fetch('/api/simulate-jobs');
@@ -355,19 +353,15 @@ export default function App() {
     }
   };
 
-  // Fetch letter history from Cloudflare backend
   const fetchLetterHistory = async (email: string) => {
     try {
-      // First get candidate ID
       const candidateRes = await fetch(`/api/candidates?email=${encodeURIComponent(email)}`);
       if (candidateRes.ok) {
         const { candidate } = await candidateRes.json();
         if (candidate) {
-          // Then get their letters
           const lettersRes = await fetch(`/api/letters?candidateId=${candidate.id}`);
           if (lettersRes.ok) {
             const { letters } = await lettersRes.json();
-            // Merge with localStorage history
             const cloudLetters = letters.map((l: any) => ({
               id: l.id,
               createdAt: l.created_at,
@@ -407,7 +401,6 @@ export default function App() {
     }
   };
 
-  // Save candidate profile to Cloudflare backend
   const saveCandidateToCloud = async () => {
     try {
       await fetch('/api/candidates', {
@@ -431,13 +424,10 @@ export default function App() {
     }
   };
 
-  // Save letter to Cloudflare backend
   const saveLetterToCloud = async (letter: GeneratedLetters) => {
     try {
-      // First ensure candidate exists
       await saveCandidateToCloud();
       
-      // Then save letter
       const response = await fetch('/api/letters', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -576,10 +566,6 @@ export default function App() {
       if (!personalInfo.address.trim()) errors.address = 'Physical address is required';
     }
 
-    if (step === 1) {
-      // Auto-filled as Jobseeker
-    }
-
     if (step === 2) {
       if (!jobInfo.jobTitle.trim()) errors.jobTitle = 'Target Job Title is required';
       if (!jobInfo.companyName.trim()) errors.companyName = 'Company name is required';
@@ -649,7 +635,6 @@ export default function App() {
     }
   };
 
-  // Updated generate letters with Cloudflare backend
   const handleGenerateLetters = async () => {
     if (!validateStep(0) || !validateStep(1) || !validateStep(2)) {
       setActiveStep(0);
@@ -716,12 +701,10 @@ export default function App() {
       setEditedApplication(parsedResult.applicationLetter);
       setEditedCover(parsedResult.coverLetter);
 
-      // Save to localStorage
       const updatedHistory = [sessionResult, ...letterHistory];
       setLetterHistory(updatedHistory);
       localStorage.setItem('jr_letters_history', JSON.stringify(updatedHistory));
 
-      // Save to cloud (non-blocking)
       if (personalInfo.email) {
         await saveLetterToCloud(sessionResult);
       }
@@ -737,7 +720,6 @@ export default function App() {
     }
   };
 
-  // Updated restore letter handler
   const handleRestoreLetter = (historyItem: GeneratedLetters) => {
     setGeneratedResult(historyItem);
     setPersonalInfo(historyItem.request.personalInfo);
@@ -753,16 +735,13 @@ export default function App() {
     toastSuccess('Loaded application record successfully');
   };
 
-  // Updated delete history item with cloud sync
   const handleDeleteHistoryItem = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (confirm('Are you sure you want to delete this archived letter from history?')) {
-      // Delete from localStorage
       const filtered = letterHistory.filter(item => item.id !== id);
       setLetterHistory(filtered);
       localStorage.setItem('jr_letters_history', JSON.stringify(filtered));
       
-      // Delete from cloud
       try {
         await fetch(`/api/letters?id=${id}`, { method: 'DELETE' });
       } catch (err) {
@@ -792,50 +771,67 @@ export default function App() {
     URL.revokeObjectURL(url);
   };
 
-  // Direct PDF download - auto-saves without asking
+  // Direct auto-download PDF without prompt, with candidate name
   const downloadPDFDocument = async () => {
     const element = document.getElementById('printable-area');
     if (!element) {
-      toastError('Could not locate printable letter sheet format');
+      toastError('Could not locate printable letter sheet');
       return;
     }
 
     try {
-      setSaveFeedback('Generating PDF... Please wait.');
+      setSaveFeedback('Generating PDF...');
 
+      // Store original styles
       const originalBoxShadow = element.style.boxShadow;
       const originalBorder = element.style.border;
+      const originalOverflow = element.style.overflow;
       
+      // Prepare for capture
       element.style.boxShadow = 'none';
       element.style.border = 'none';
+      element.style.overflow = 'hidden';
 
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
         logging: false,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        windowWidth: 794,
+        windowHeight: 1123,
       });
 
+      // Restore styles
       element.style.boxShadow = originalBoxShadow;
       element.style.border = originalBorder;
+      element.style.overflow = originalOverflow;
 
-      const imgData = canvas.toDataURL('image/png');
-      
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
-        format: 'a4'
+        format: 'a4',
       });
 
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-      
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      const ratio = imgWidth / imgHeight;
-      const calculatedHeight = pdfWidth / ratio;
 
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, Math.min(calculatedHeight, pdfHeight), undefined, 'FAST');
+      const imgRatio = canvas.height / canvas.width;
+      const pageRatio = pdfHeight / pdfWidth;
+
+      let finalWidth = pdfWidth;
+      let finalHeight = pdfWidth * imgRatio;
+
+      if (finalHeight > pdfHeight) {
+        finalHeight = pdfHeight;
+        finalWidth = pdfHeight / imgRatio;
+      }
+
+      const x = (pdfWidth - finalWidth) / 2;
+      const y = 0;
+
+      pdf.addImage(imgData, 'JPEG', x, y, finalWidth, finalHeight, undefined, 'FAST');
 
       const letterType = activeTab === 'application' ? 'Application_Letter' : 'Cover_Letter';
       const safeName = (personalInfo.fullName || 'Candidate')
@@ -844,17 +840,16 @@ export default function App() {
       const filename = `${safeName}_${letterType}.pdf`;
 
       pdf.save(filename);
-      
-      setSaveFeedback('PDF downloaded successfully! ✓');
+
+      setSaveFeedback(`PDF "${filename}" downloaded! ✓`);
       setTimeout(() => setSaveFeedback(''), 4000);
-      
     } catch (err) {
-      console.error('PDF Generation failed:', err);
-      setSaveFeedback('PDF generation failed. Trying print fallback...');
+      console.error('PDF failed:', err);
+      setSaveFeedback('Generating PDF via print fallback...');
       setTimeout(() => {
         window.print();
         setSaveFeedback('');
-      }, 2000);
+      }, 1000);
     }
   };
 
@@ -864,17 +859,17 @@ export default function App() {
 
   const getMarginStyle = () => {
     switch (layoutConfig.marginSize) {
-      case 'compact': return 'py-8 px-10';
-      case 'wide': return 'py-14 px-16';
-      default: return 'py-12 px-14';
+      case 'compact': return 'py-10 px-12';
+      case 'wide': return 'py-16 px-20';
+      default: return 'py-12 px-16';
     }
   };
 
   const getFontSizeStyle = () => {
     switch (layoutConfig.fontSize) {
-      case 'small': return 'text-[13px] leading-relaxed';
-      case 'large': return 'text-[16px] leading-[1.7]';
-      default: return 'text-[14px] leading-relaxed';
+      case 'small': return 'text-[14px] leading-[1.6] text-slate-900 font-medium';
+      case 'large': return 'text-[17px] leading-[1.7] text-slate-900 font-medium';
+      default: return 'text-[15px] leading-[1.6] text-slate-900 font-medium';
     }
   };
 
@@ -1985,7 +1980,7 @@ export default function App() {
                   <span>{copiedState ? 'Copied' : 'Copy Text'}</span>
                 </button>
 
-                {/* DIRECT PDF DOWNLOAD BUTTON - REPLACES WORD DOWNLOAD */}
+                {/* DIRECT PDF DOWNLOAD BUTTON */}
                 <button
                   onClick={downloadPDFDocument}
                   className="px-4 py-2.5 bg-[#0B5ED7] hover:bg-[#044dbd] text-white rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer no-print shadow-sm"
