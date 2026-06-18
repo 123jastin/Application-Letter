@@ -69,9 +69,6 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     );
 
     // ─── BUILD THE EXACT LETTER TEMPLATE ───────────────
-    // Name + Address rendered by frontend at top right
-    // Date rendered by frontend at top right below address
-    // Employer rendered by frontend at left
     const letterTemplate = isSwahili
       ? `<!-- SECTION_DATE -->
 ${today}
@@ -133,36 +130,64 @@ SHERIA MUHIMU - USIVUMBUE DATA:
 5. USITAJIE uzoefu ambao haujatajwa
 6. TUMIA TU taarifa ulizopewa
 
+SHERIA ZA KUANDIKA (Kanuni Muhimu Sana):
+1. USIRUDIE maneno — kila sentensi iwe ya kipekee
+2. USITUMIE "kufanya kazi" zaidi ya mara 2 katika barua nzima
+3. USITUMIE "kufikia malengo" zaidi ya mara 1
+4. USITUMIE "ninajua kwamba" — tumia "ninaamini", "nina uwezo", au "nitaweza"
+5. USITUMIE "Ninafurahishwa" — tumia "Ninafuraha" au "Nina heshima"
+6. TUMIA lugha tofauti katika kila aya
+7. Aya ya mwisho iwe na sentensi MOJA tu ya matarajio — usirudie
+8. USIMALIZIE kwa sentensi mbili zinazofanana
+
 NAMNA YA KUANZA:
 "Tafadhali rejea somo tajwa la barua hapo juu."
 
-MUUNDO WA AYA (Andika aya 4-5 ndefu):
-Aya 1: Rejea na kutambulisha — sentensi 3-4. Tambulisha jina, eleza unachoomba, na sababu ya maombi.
-Aya 2: Uwezo na uzoefu — sentensi 4-5. Eleza kwa kina ujuzi na uzoefu unaolingana na kazi.
-Aya 3: Sifa binafsi na mchango — sentensi 3-4. Eleza sifa zako na jinsi utakavyochangia.
+MUUNDO WA AYA (Andika aya 4-5 ndefu zenye sentensi tofauti):
+Aya 1: Rejea na kutambulisha — sentensi 3. Tambulisha jina, eleza unachoomba, na kwa nini unaomba.
+Aya 2: Uwezo na uzoefu — sentensi 4-5. Eleza ujuzi na uzoefu kwa kutumia maneno tofauti. Tumia "Nina uwezo wa...", "Kupitia uzoefu wangu...", "Nimejifunza...".
+Aya 3: Sifa binafsi na mchango — sentensi 3-4. Eleza sifa zako na jinsi utakavyochangia. Tumia "Nitaweza kuchangia...", "Nina sifa ya...".
 Aya 4: Nyaraka — "Pamoja na barua hii nimeambatanisha vivuli vya vyeti vyangu vya taaluma na mahitaji mengine yote kwa mujibu wa tangazo."
-Aya 5: Matarajio — "Natumai ombi langu litapokelewa na kujibiwa. Ninategemea majibu mazuri kutoka kwako na nipo tayari kwa usaili."
+Aya 5: Matarajio — sentensi MOJA tu. "Natumai ombi langu litapokelewa na kujibiwa." AU "Nina imani ombi langu litakubaliwa na ninategemea majibu mazuri kutoka kwako."
 
-MANENO YALIYOKATAZWA:
+MFANO SAHIHI WA AYA (Fuata mtindo huu):
+"Nina uwezo wa kuendesha gari kwa usalama na kufanya matengenezo ya magari. Vilevile, nina ujuzi wa kufunga na kufuta vifaa vya GPS. Kupitia uzoefu wangu, nitaweza kuchangia katika mafanikio ya kampuni yako."
+
+MFANO MBAYA (USIFUATE):
+"Nina uwezo wa kufanya kazi kwa ufasaha na uweledi, na ninajua kwamba nafasi hii inahitaji uwezo wa kuendesha gari. Pia, ninajua kwamba nitaweza kuchangia katika kufikia malengo ya kampuni yako."
+
+MANENO YALIYOKATAZWA KABISA:
 ❌ shauku, furahi, hamasa, hamu, vutiwa sana, napenda
 ❌ Asante kwa kuangalia, Natumai kusikia, Kwa heshima kubwa (closing)
 ❌ elimu ya msingi, mhitimu wa shule
+❌ Ninafurahishwa — tumia "Ninafuraha" au "Nina heshima"
+❌ ninajua kwamba — tumia "ninaamini", "nitaweza", "nina uwezo"
+❌ kufanya kazi — usitumie zaidi ya mara 2
+❌ kufikia malengo — usitumie zaidi ya mara 1
+❌ kurudia sentensi za matarajio mara mbili mwishoni
 
-MANENO SAHIHI:
+MANENO SAHIHI YA KUTUMIA:
 ✓ Tafadhali rejea somo tajwa la barua hapo juu
-✓ Kwa mujibu wa tangazo
-✓ Nina uwezo wa kufanya kazi kwa ufasaha/uweledi/ufanisi
+✓ Ninafuraha kuwasilisha maombi yangu
+✓ Nina heshima kuomba nafasi ya...
+✓ Kupitia uzoefu wangu, nimejifunza...
+✓ Nina uwezo wa kuendesha / kusimamia / kutekeleza
+✓ Nina sifa ya kufanya kazi kwa ufanisi
+✓ Nitaweza kuchangia katika maendeleo ya kampuni
+✓ Vilevile, pia, zaidi ya hayo
 ✓ nimeambatanisha vivuli vya vyeti vyangu
 ✓ Natumai ombi langu litapokelewa na kujibiwa
-✓ Wako mwaminifu, / Wako katika ujenzi wa Taifa
+✓ Nina imani ombi langu litakubaliwa
+✓ Wako mwaminifu,
 
 SHERIA ZA JUMLA:
-1. Jaza SEHEMU YA MWILI tu
-2. Rudisha template YOTE
-3. USIVUMBUE data
-4. USIRUDIE maneno yaleyale
+1. Jaza SEHEMU YA MWILI tu — usibadilishe anwani, tarehe, wala sahihi
+2. Rudisha template YOTE ikiwa imejazwa
+3. USIVUMBUE taarifa ambazo hazijatolewa
+4. Kila sentensi iwe na maana tofauti — usirudie wazo lilelile
 5. Usiunganishe YAH na mwili — anza mwili kwa aya mpya
-6. Usirudie barua mara mbili`
+6. Usirudie barua mara mbili
+7. Barua ionekane imeandikwa na Mtanzania mwenye uzoefu wa kuandika`
       : `You fill in ONLY the <!-- SECTION_BODY --> of a job application letter template.
 
 RULES:
@@ -179,7 +204,7 @@ TAARIFA ZA MWOMBAJI (TUMIA HIZI TU):
 Jina: ${fullName}
 Simu: ${data.personalInfo.phone}
 Barua Pepe: ${data.personalInfo.email}
-Anwani: ${applicantAddress}
+Anwani: ${data.personalInfo.address}
 Elimu: ${data.professionalInfo.highestEducation || 'Haijatajwa'}
 Uzoefu: Miaka ${data.professionalInfo.yearsOfExperience}
 Nafasi ya Sasa: ${data.professionalInfo.currentPosition}
@@ -196,18 +221,21 @@ Nchi: ${data.targetCountry}
 TEMPLATE:
 ${letterTemplate}
 
-Badilisha [ANDIKA MWILI WA BARUA HAPA] na aya 4-5 ndefu kwa Kiswahili sanifu.
-USITAJIE umri, elimu, chuo, au mwaka isipokuwa vimetolewa kwenye taarifa hapo juu.
-USIRUDIE maneno yaleyale.
-Anza mwili kwa aya mpya — usiunganishe na YAH.
-Rudisha template YOTE mara MOJA.`
+Badilisha [ANDIKA MWILI WA BARUA HAPA] na aya 4-5 kwa Kiswahili sanifu.
+MUHIMU SANA:
+- USITUMIE "kufanya kazi" zaidi ya mara 2
+- USITUMIE "kufikia malengo" zaidi ya mara 1
+- USITUMIE "ninajua kwamba" — tumia "nitaweza" au "ninaamini"
+- USITUMIE "Ninafurahishwa" — tumia "Ninafuraha"
+- Kila aya iwe na maneno tofauti
+- Aya ya mwisho iwe na sentensi MOJA tu ya matarajio
+- USITAJIE umri, elimu, chuo, au mwaka isipokuwa vimetolewa
+- Anza mwili kwa aya mpya
+- Rudisha template YOTE mara MOJA.`
       : `Fill in the SECTION_BODY of this letter template. Return the COMPLETE template with body filled.
 
 APPLICANT INFO:
 Name: ${fullName}
-Address: ${applicantAddress}
-Phone: ${data.personalInfo.phone}
-Email: ${data.personalInfo.email}
 Education: ${data.professionalInfo.highestEducation}
 Experience: ${data.professionalInfo.yearsOfExperience} years as ${data.professionalInfo.currentPosition}
 Skills: ${data.professionalInfo.keySkills || 'Professional skills'}
@@ -236,7 +264,6 @@ Replace [WRITE BODY HERE] with 3 short paragraphs. Return the COMPLETE template.
 
     let applicationLetter = appResult.choices[0]?.message?.content || '';
 
-    // Remove duplicate if AI returns letter twice
     const marker = '<!-- SECTION_DATE -->';
     const first = applicationLetter.indexOf(marker);
     const second = applicationLetter.indexOf(marker, first + 1);
@@ -264,7 +291,7 @@ Yours sincerely,
 ${fullName}`;
 
     const coverSystemPrompt = isSwahili
-      ? `Andika barua ya kuambatana kwa Kiswahili cha Mtanzania. Aya 2-3 ndefu. USIVUMBUE data. Usitumie "shauku", "furahi", "hamasa".`
+      ? `Andika barua ya kuambatana kwa Kiswahili cha Mtanzania. Aya 2-3 ndefu. USIVUMBUE data. USITUMIE "kufanya kazi" zaidi ya mara 1, "kufikia malengo", "ninajua kwamba", "Ninafurahishwa". Tumia lugha tofauti katika kila sentensi.`
       : `Fill in ONLY the body of a cover letter template. Return the COMPLETE template. Keep it short - 150 words max. Do NOT repeat the name in the closing.`;
 
     const coverUserPrompt = isSwahili
@@ -279,7 +306,7 @@ NCHI: ${data.targetCountry}
 TEMPLATE:
 ${coverTemplate}
 
-Badilisha [ANDIKA MWILI WA BARUA YA KUAMBATANA HAPA] na aya 2-3. Rudisha template YOTE.`
+Badilisha [ANDIKA MWILI WA BARUA YA KUAMBATANA HAPA] na aya 2-3. USITUMIE maneno yaliyokatazwa. Rudisha template YOTE.`
       : `Fill in this cover letter template:
 
 APPLICANT: ${fullName}
@@ -306,7 +333,6 @@ Replace [WRITE COVER LETTER BODY HERE]. Return COMPLETE template.`;
 
     let coverLetter = coverResult.choices[0]?.message?.content || '';
 
-    // Remove duplicate cover letter
     const coverMarker = '<!-- SECTION_BODY -->';
     const coverFirst = coverLetter.indexOf(coverMarker);
     const coverSecond = coverLetter.indexOf(coverMarker, coverFirst + 1);
