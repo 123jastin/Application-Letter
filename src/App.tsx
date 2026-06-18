@@ -2114,6 +2114,11 @@ export default function App() {
                 <button
                   onClick={() => {
                     if (!isEditing) {
+                      // Strip comments when entering edit mode so user sees clean text
+                      setEditedApplication(stripComments(editedApplication));
+                      setEditedCover(stripComments(editedCover));
+                    } else {
+                      // When exiting, strip comments again to keep it clean
                       setEditedApplication(stripComments(editedApplication));
                       setEditedCover(stripComments(editedCover));
                     }
@@ -2124,10 +2129,9 @@ export default function App() {
                       ? 'bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100' 
                       : 'bg-white hover:bg-slate-50 border-slate-300 text-slate-700'
                   }`}
-                  title={isEditing ? 'Toggle to document preview render image format' : 'Convert this text segment to a live rich document editor'}
                 >
                   {isEditing ? <Eye className="w-4 h-4 text-blue-600" /> : <Edit3 className="w-4 h-4 text-slate-500" />}
-                  <span className="hidden sm:inline">{isEditing ? 'Preview Sheet' : 'Quick Edit'}</span>
+                  <span className="hidden sm:inline">{isEditing ? 'Preview' : 'Quick Edit'}</span>
                 </button>
 
                 <button
@@ -2273,9 +2277,17 @@ export default function App() {
                   </button>
                   <button
                     onClick={() => {
+                      // Strip HTML comments from edited text before saving
+                      if (activeTab === 'application') {
+                        const cleaned = stripComments(editedApplication);
+                        setEditedApplication(cleaned);
+                      } else {
+                        const cleaned = stripComments(editedCover);
+                        setEditedCover(cleaned);
+                      }
                       setIsEditing(false);
-                      setSaveFeedback('Changes saved and preview rendered successfully! ✓');
-                      setTimeout(() => setSaveFeedback(''), 4500);
+                      setSaveFeedback('Changes saved and preview rendered! ✓');
+                      setTimeout(() => setSaveFeedback(''), 4000);
                     }}
                     className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-md font-bold cursor-pointer transition-colors"
                   >
@@ -2289,7 +2301,7 @@ export default function App() {
               
               {isEditing ? (
                 <textarea
-                  className="w-full max-w-[210mm] min-h-[297mm] bg-white text-slate-800 border-2 border-slate-300 rounded-lg p-10 focus:outline-none focus:border-[#0B5ED7] focus:ring-2 focus:ring-[#0B5ED7]/25 font-mono text-xs leading-relaxed"
+                  className="w-full max-w-[210mm] min-h-[297mm] bg-white text-slate-900 border-2 border-blue-300 rounded-lg p-8 focus:outline-none focus:border-[#0B5ED7] focus:ring-2 focus:ring-[#0B5ED7]/25 text-[15px] leading-[1.6] font-normal"
                   value={activeTab === 'application' ? editedApplication : editedCover}
                   onChange={(e) => {
                     if (activeTab === 'application') {
@@ -2298,7 +2310,11 @@ export default function App() {
                       setEditedCover(e.target.value);
                     }
                   }}
-                  placeholder="Direct document block editor details..."
+                  placeholder="Edit your letter here..."
+                  style={{
+                    fontFamily: '"Inter", sans-serif',
+                    resize: 'vertical',
+                  }}
                 />
               ) : (
                 <div 
