@@ -292,8 +292,8 @@ export default function App() {
   const [saveFeedback, setSaveFeedback] = useState<string>('');
 
   const [layoutConfig, setLayoutConfig] = useState({
-    marginSize: 'standard' as 'compact' | 'standard' | 'wide',
-    fontSize: 'medium' as 'small' | 'medium' | 'large',
+    marginSize: 'compact' as 'compact' | 'standard' | 'wide',
+    fontSize: 'small' as 'small' | 'medium' | 'large',
     signatureType: 'typed' as 'typed' | 'uploaded',
     accentColor: '#0B5ED7',
     signatureSlant: '-rotate-3',
@@ -792,331 +792,8 @@ export default function App() {
     URL.revokeObjectURL(url);
   };
 
-  const downloadWordDoc = (text: string, title: string) => {
-    const parsed = parseLetterText(text);
-    const cleanText = stripMarkdownAndHtml(text);
-    const dateFormatted = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-    const cleanSubject = stripMarkdownAndHtml(parsed.subject || 'APPLICATION FOR EMPLOYMENT');
-    const activeStandard = generatedResult?.regionalStandard || getRegionalStandard(generatedResult?.request?.targetCountry || targetCountry);
-
-    let fontSizeWord = '11.5pt';
-    if (layoutConfig.fontSize === 'small') fontSizeWord = '10pt';
-    else if (layoutConfig.fontSize === 'large') fontSizeWord = '12.5pt';
-
-    let marginWord = '1in';
-    if (layoutConfig.marginSize === 'compact') marginWord = '0.5in';
-    else if (layoutConfig.marginSize === 'wide') marginWord = '1.25in';
-
-    let signatureHtml = '';
-    if (layoutConfig.signatureType === 'uploaded' && personalInfo.signatureImage) {
-      signatureHtml = `<img src="${personalInfo.signatureImage}" style="height: 40pt; max-width: 150pt; object-fit: contain; margin-bottom: 5px;" alt="Signature"/>`;
-    } else if (personalInfo.signatureText) {
-      let sigColorHex = '#1e3a8a';
-      if (layoutConfig.signatureColor === 'text-blue-900') sigColorHex = '#1e3a8a';
-      else if (layoutConfig.signatureColor === 'text-slate-900') sigColorHex = '#0f172a';
-      else if (layoutConfig.signatureColor === 'text-emerald-900') sigColorHex = '#064e3b';
-      else if (layoutConfig.signatureColor === 'text-rose-900') sigColorHex = '#4c0519';
-      else if (layoutConfig.signatureColor === 'text-purple-900') sigColorHex = '#581c87';
-      else if (layoutConfig.signatureColor === 'text-amber-900') sigColorHex = '#78350f';
-
-      const slantAngle = layoutConfig.signatureSlant === '-rotate-3' ? '-3deg' : 
-                          layoutConfig.signatureSlant === 'rotate-3' ? '3deg' : 
-                          layoutConfig.signatureSlant === 'rotate-1' ? '1deg' : 
-                          layoutConfig.signatureSlant === '-rotate-12' ? '-12deg' : '0deg';
-
-      signatureHtml = `
-        <div style="padding: 10px 0; transform: rotate(${slantAngle}); -webkit-transform: rotate(${slantAngle});">
-          <span style="font-family: 'Brush Script MT', 'Lucida Handwriting', 'Georgia', 'Courier New', cursive; font-size: 24pt; color: ${sigColorHex}; font-style: italic; display: inline-block;">
-            ${personalInfo.signatureText}
-          </span>
-        </div>
-      `;
-    } else {
-      signatureHtml = `<div style="width: 120pt; height: 1px; border-bottom: 1px dashed #cbd5e1; margin-top: 15pt; margin-bottom: 10pt;"></div>`;
-    }
-
-    const cleanEmployer = stripMarkdownAndHtml(parsed.employer || 'Employer Address').split('\n').join('<br/>');
-    const cleanSalutation = stripMarkdownAndHtml(parsed.salutation || 'Dear Sir/Madam,');
-    const cleanBodyHtml = stripMarkdownAndHtml(parsed.body || cleanText).split('\n\n').map(p => `<p style="margin-bottom: 12pt; text-align: justify;">${p.replace(/\n/g, '<br/>')}</p>`).join('');
-    const cleanClosing = stripMarkdownAndHtml(parsed.closing || 'Sincerely yours,');
-
-    let layoutContent = '';
-
-    if (activeStandard === 'East African Formal') {
-      layoutContent = `
-        <div style="text-align: right; margin-bottom: 25px;">
-          <strong style="color: #0f172a; font-size: 13pt;">${personalInfo.fullName || 'APPLICANT'}</strong><br/>
-          ${formatAddressLines(personalInfo.address).map(line => `<span style="color: #475569;">${line}</span>`).join('<br/>') || 'Address Details'}<br/>
-          <span style="color: #334155; font-weight: bold; margin-top: 5px; display: inline-block;">Date: ${stripMarkdownAndHtml(parsed.date) || dateFormatted}</span>
-        </div>
-        
-        <br/>
-        
-        <div style="text-align: left; margin-bottom: 25px; color: #334155;">
-          ${cleanEmployer}
-        </div>
-        
-        <br/>
-        
-        ${parsed.subject ? `
-        <div style="font-weight: bold; text-decoration: underline; text-transform: uppercase; margin-top: 15px; margin-bottom: 15px; text-align: left; font-size: 12pt; color: #0f172a;">
-          ${cleanSubject}
-        </div>
-        ` : ''}
-        
-        <div style="font-weight: bold; margin-bottom: 15px; color: #1e293b;">
-          ${cleanSalutation}
-        </div>
-        
-        <div style="margin-bottom: 25px; color: #1e293b; line-height: 1.5;">
-          ${cleanBodyHtml}
-        </div>
-        
-        <div style="margin-bottom: 30px; font-weight: bold; color: #1e293b;">
-          ${cleanClosing}
-        </div>
-        
-        <div style="margin-top: 20px;">
-          ${signatureHtml}
-          <div style="margin-top: 8px; font-weight: bold; font-size: 11.5pt; color: #0f172a;">
-            ${personalInfo.fullName}
-          </div>
-          <div style="margin-top: 4px; font-size: 10pt; color: #475569; line-height: 1.4;">
-            Phone: ${personalInfo.phone || ''}<br/>
-            Email: ${personalInfo.email || ''}
-          </div>
-        </div>
-      `;
-    } else if (activeStandard === 'UK Professional') {
-      layoutContent = `
-        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; margin-bottom: 25px; border-bottom: 2px solid ${layoutConfig.accentColor}; padding-bottom: 10px;">
-          <tr>
-            <td align="left" valign="top">
-              <h1 style="margin: 0; font-family: 'Calibri', 'Arial', sans-serif; font-size: 16pt; font-weight: bold; color: #0f172a;">${personalInfo.fullName}</h1>
-              <p style="margin: 3px 0 0 0; font-family: 'Calibri', 'Arial', sans-serif; font-size: 9.5pt; text-transform: uppercase; font-weight: bold; color: #64748b; letter-spacing: 1px;">Applicant Profile</p>
-            </td>
-            <td align="right" valign="top" style="font-family: 'Calibri', 'Arial', sans-serif; font-size: 9.5pt; color: #475569; line-height: 1.35;">
-              ${personalInfo.phone} | ${personalInfo.email}<br/>
-              ${personalInfo.address}
-            </td>
-          </tr>
-        </table>
-
-        <div style="color: #64748b; font-size: 9.5pt; font-weight: bold; text-transform: uppercase; margin-bottom: 15px;">
-          ${stripMarkdownAndHtml(parsed.date) || dateFormatted}
-        </div>
-
-        <div style="margin-bottom: 20px; color: #475569; line-height: 1.45;">
-          ${cleanEmployer}
-        </div>
-
-        <div style="font-weight: bold; margin-bottom: 15px; color: #0f172a;">
-          ${cleanSalutation}
-        </div>
-
-        <div style="margin-bottom: 25px; color: #1e293b; line-height: 1.5;">
-          ${cleanBodyHtml}
-        </div>
-
-        <div style="margin-bottom: 30px; font-weight: bold; color: #1e293b;">
-          ${cleanClosing}
-        </div>
-
-        <div style="margin-top: 20px;">
-          ${signatureHtml}
-          <div style="margin-top: 8px; font-weight: bold; font-size: 11.5pt; color: #0f172a;">
-            ${personalInfo.fullName}
-          </div>
-          <div style="margin-top: 4px; font-size: 9.5pt; color: #64748b; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px;">
-            Applicant Profile
-          </div>
-        </div>
-      `;
-    } else if (activeStandard === 'North American ATS') {
-      layoutContent = `
-        <div style="text-align: center; border-bottom: 1px solid #cbd5e1; padding-bottom: 12px; margin-bottom: 25px;">
-          <h1 style="margin: 0 0 4px 0; font-family: 'Calibri', 'Arial', sans-serif; font-size: 18pt; font-weight: bold; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px;">${personalInfo.fullName}</h1>
-          <p style="margin: 0 0 6px 0; font-family: 'Calibri', 'Arial', sans-serif; font-size: 10.5pt; font-weight: bold; color: #475569;">Applicant Profile</p>
-          <p style="margin: 0; font-family: 'Calibri', 'Arial', sans-serif; font-size: 9.5pt; color: #64748b;">
-            ${personalInfo.address} &bull; ${personalInfo.phone} &bull; ${personalInfo.email}
-          </p>
-        </div>
-
-        <div style="color: #475569; font-size: 10pt; margin-bottom: 15px;">
-          ${stripMarkdownAndHtml(parsed.date) || dateFormatted}
-        </div>
-
-        <div style="margin-bottom: 20px; color: #475569; line-height: 1.45;">
-          ${cleanEmployer}
-        </div>
-
-        <div style="font-weight: bold; margin-bottom: 15px; color: #0f172a;">
-          ${cleanSalutation}
-        </div>
-
-        <div style="margin-bottom: 25px; color: #1e293b; line-height: 1.5;">
-          ${cleanBodyHtml}
-        </div>
-
-        <div style="margin-bottom: 30px; font-weight: bold; color: #1e293b;">
-          ${cleanClosing}
-        </div>
-
-        <div style="margin-top: 20px;">
-          ${signatureHtml}
-          <div style="margin-top: 8px; font-weight: bold; font-size: 11.5pt; color: #0f172a;">
-            ${personalInfo.fullName}
-          </div>
-          <div style="margin-top: 4px; font-size: 9.5pt; color: #64748b; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px;">
-            Applicant Profile
-          </div>
-        </div>
-      `;
-    } else if (activeStandard === 'Gulf Professional') {
-      layoutContent = `
-        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; margin-bottom: 25px; border-bottom: 3px solid ${layoutConfig.accentColor || '#0f172a'}; padding-bottom: 12px;">
-          <tr>
-            <td align="left" valign="top">
-              <h1 style="margin: 0; font-family: 'Calibri', 'Arial', sans-serif; font-size: 16pt; font-weight: bold; color: #0f172a; letter-spacing: -0.5px;">${personalInfo.fullName}</h1>
-              <p style="margin: 3px 0 0 0; font-family: 'Calibri', 'Arial', sans-serif; font-size: 9.5pt; text-transform: uppercase; font-weight: bold; color: #64748b; letter-spacing: 0.5px;">Applicant Profile</p>
-            </td>
-            <td align="right" valign="top" style="font-family: 'Calibri', 'Arial', sans-serif; font-size: 9.5pt; color: #475569; line-height: 1.35;">
-              <strong>Phone:</strong> ${personalInfo.phone}<br/>
-              <strong>Email:</strong> ${personalInfo.email}<br/>
-              ${personalInfo.address}
-            </td>
-          </tr>
-        </table>
-
-        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; margin-bottom: 20px;">
-          <tr>
-            <td align="left" valign="top" style="font-family: 'Calibri', 'Arial', sans-serif; font-size: 10.5pt; color: #475569; line-height: 1.45; width: 60%;">
-              ${cleanEmployer}
-            </td>
-            <td align="right" valign="top" style="font-family: 'Calibri', 'Arial', sans-serif; font-size: 10pt; font-weight: bold; color: #64748b; width: 40%;">
-              ${stripMarkdownAndHtml(parsed.date) || dateFormatted}
-            </td>
-          </tr>
-        </table>
-
-        ${parsed.subject ? `
-        <table width="100%" cellpadding="8" cellspacing="0" style="border-collapse: collapse; background-color: #f8fafc; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; margin-bottom: 20px;">
-          <tr>
-            <td style="font-family: 'Calibri', 'Arial', sans-serif; font-size: 10.5pt; font-weight: bold; color: #0f172a; text-transform: uppercase;">
-              ${cleanSubject}
-            </td>
-          </tr>
-        </table>
-        ` : ''}
-
-        <div style="font-weight: bold; margin-bottom: 15px; color: #0f172a;">
-          ${cleanSalutation}
-        </div>
-
-        <div style="margin-bottom: 25px; color: #1e293b; line-height: 1.5;">
-          ${cleanBodyHtml}
-        </div>
-
-        <div style="margin-bottom: 30px; font-weight: bold; color: #1e293b;">
-          ${cleanClosing}
-        </div>
-
-        <div style="margin-top: 20px;">
-          ${signatureHtml}
-          <div style="margin-top: 8px; font-weight: bold; font-size: 11.5pt; color: #0f172a;">
-            ${personalInfo.fullName}
-          </div>
-          <div style="margin-top: 4px; font-size: 9.5pt; color: #64748b; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px;">
-            Applicant Profile
-          </div>
-        </div>
-      `;
-    } else {
-      layoutContent = `
-        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; margin-bottom: 25px; border-bottom: 1px solid #cbd5e1; padding-bottom: 12px;">
-          <tr>
-            <td align="left" valign="top">
-              <h1 style="margin: 0; font-family: 'Calibri', 'Arial', sans-serif; font-size: 18pt; font-weight: 300; color: #0f172a; letter-spacing: -0.5px;">${personalInfo.fullName}</h1>
-              <p style="margin: 3px 0 0 0; font-family: 'Calibri', 'Arial', sans-serif; font-size: 9pt; color: #64748b; letter-spacing: 0.5px;">Applicant Profile</p>
-            </td>
-            <td align="right" valign="top" style="font-family: 'Calibri', 'Arial', sans-serif; font-size: 9.5pt; color: #475569; line-height: 1.35;">
-              ${personalInfo.phone} | ${personalInfo.email}<br/>
-              ${personalInfo.address}
-            </td>
-          </tr>
-        </table>
-
-        <div style="color: #94a3b8; font-size: 9.5pt; font-weight: bold; margin-bottom: 15px;">
-          ${stripMarkdownAndHtml(parsed.date) || dateFormatted}
-        </div>
-
-        <div style="margin-bottom: 20px; color: #475569; line-height: 1.45;">
-          ${cleanEmployer}
-        </div>
-
-        <div style="font-weight: bold; margin-bottom: 15px; color: #0f172a;">
-          ${cleanSalutation}
-        </div>
-
-        <div style="margin-bottom: 25px; color: #1e293b; line-height: 1.5;">
-          ${cleanBodyHtml}
-        </div>
-
-        <div style="margin-bottom: 30px; font-weight: bold; color: #1e293b;">
-          ${cleanClosing}
-        </div>
-
-        <div style="margin-top: 20px;">
-          ${signatureHtml}
-          <div style="margin-top: 8px; font-weight: bold; font-size: 11.5pt; color: #0f172a;">
-            ${personalInfo.fullName}
-          </div>
-          <div style="margin-top: 4px; font-size: 9.5pt; color: #64748b; letter-spacing: 0.5px;">
-            Applicant Profile
-          </div>
-        </div>
-      `;
-    }
-
-    const htmlContent = `
-      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-      <head>
-        <meta charset="utf-8">
-        <title>${title}</title>
-        <style>
-          @page {
-            size: A4;
-            margin: ${marginWord};
-          }
-          body {
-            font-family: 'Calibri', 'Arial', sans-serif;
-            font-size: ${fontSizeWord};
-            line-height: 1.35;
-            color: #1a202c;
-            background-color: #ffffff;
-          }
-        </style>
-      </head>
-      <body style="border-top: 6px solid ${layoutConfig.accentColor}; padding-top: 24px;">
-        <div style="max-width: 100%; margin: 0 auto; padding: 0 10px;">
-          ${layoutContent}
-        </div>
-      </body>
-      </html>
-    `;
-
-    const blob = new Blob(['\ufeff' + htmlContent], { type: 'application/msword;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${title.replace(/\s+/g, '_')}.doc`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
-  const downloadPDFDocument = async (title: string) => {
+  // Direct PDF download - auto-saves without asking
+  const downloadPDFDocument = async () => {
     const element = document.getElementById('printable-area');
     if (!element) {
       toastError('Could not locate printable letter sheet format');
@@ -1124,7 +801,7 @@ export default function App() {
     }
 
     try {
-      setSaveFeedback('Preparing executive-level digital PDF layout... Please wait 1-2 seconds.');
+      setSaveFeedback('Generating PDF... Please wait.');
 
       const originalBoxShadow = element.style.boxShadow;
       const originalBorder = element.style.border;
@@ -1158,29 +835,26 @@ export default function App() {
       const ratio = imgWidth / imgHeight;
       const calculatedHeight = pdfWidth / ratio;
 
-      if (calculatedHeight <= pdfHeight) {
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, calculatedHeight, undefined, 'FAST');
-      } else {
-        let position = 0;
-        let leftHeight = calculatedHeight;
-        while (leftHeight > 0) {
-          pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, calculatedHeight, undefined, 'FAST');
-          leftHeight -= pdfHeight;
-          position -= pdfHeight;
-          if (leftHeight > 0) {
-            pdf.addPage();
-          }
-        }
-      }
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, Math.min(calculatedHeight, pdfHeight), undefined, 'FAST');
 
-      pdf.save(`${title.replace(/\s+/g, '_')}.pdf`);
-      setSaveFeedback('Downloaded Executive PDF document successfully to your device! ✓');
-      setTimeout(() => setSaveFeedback(''), 5000);
-    } catch (err) {
-      console.error('PDF Generation failed: ', err);
-      setSaveFeedback('Preparing browser print stream fallback... ✓');
+      const letterType = activeTab === 'application' ? 'Application_Letter' : 'Cover_Letter';
+      const safeName = (personalInfo.fullName || 'Candidate')
+        .replace(/\s+/g, '_')
+        .replace(/[^a-zA-Z0-9_]/g, '');
+      const filename = `${safeName}_${letterType}.pdf`;
+
+      pdf.save(filename);
+      
+      setSaveFeedback('PDF downloaded successfully! ✓');
       setTimeout(() => setSaveFeedback(''), 4000);
-      window.print();
+      
+    } catch (err) {
+      console.error('PDF Generation failed:', err);
+      setSaveFeedback('PDF generation failed. Trying print fallback...');
+      setTimeout(() => {
+        window.print();
+        setSaveFeedback('');
+      }, 2000);
     }
   };
 
@@ -1356,7 +1030,7 @@ export default function App() {
                       className={`w-full px-3 py-2 bg-slate-50 border-2 rounded-md text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B5ED7]/25 focus:border-[#0B5ED7] transition-all ${
                         formErrors.fullName ? 'border-red-400' : 'border-slate-300'
                       }`}
-                      placeholder="e.g. Kelvin J. Mkombo"
+                      placeholder="e.g. Jastin Beda"
                       value={personalInfo.fullName}
                       onChange={(e) => {
                         const updated = { ...personalInfo, fullName: e.target.value };
@@ -1378,7 +1052,7 @@ export default function App() {
                       className={`w-full px-3 py-2 bg-slate-50 border-2 rounded-md text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B5ED7]/25 focus:border-[#0B5ED7] transition-all ${
                         formErrors.email ? 'border-red-400' : 'border-slate-300'
                       }`}
-                      placeholder="e.g. kelvin.mkombo@gmail.com"
+                      placeholder="e.g. jastin.beda@gmail.com"
                       value={personalInfo.email}
                       onChange={(e) => {
                         const updated = { ...personalInfo, email: e.target.value };
@@ -1451,7 +1125,7 @@ export default function App() {
                       <input
                         type="text"
                         className="w-full px-3 py-2 bg-white border-2 border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0B5ED7]/25 focus:border-[#0B5ED7]"
-                        placeholder="e.g. K. Mkombo"
+                        placeholder="e.g. J. Beda"
                         value={personalInfo.signatureText || ''}
                         onChange={(e) => {
                           const updated = { ...personalInfo, signatureText: e.target.value };
@@ -2311,37 +1985,19 @@ export default function App() {
                   <span>{copiedState ? 'Copied' : 'Copy Text'}</span>
                 </button>
 
+                {/* DIRECT PDF DOWNLOAD BUTTON - REPLACES WORD DOWNLOAD */}
                 <button
-                  onClick={() => {
-                    const currentTitle = activeTab === 'application' ? 'Application_Letter' : 'Cover_Letter';
-                    const currentText = activeTab === 'application' ? editedApplication : editedCover;
-                    downloadWordDoc(currentText, `${personalInfo.fullName || 'Candidate'}_${currentTitle}`);
-                    setSaveFeedback('Successfully generated and downloaded Microsoft Word Document (.doc) to your device! ✓');
-                    setTimeout(() => setSaveFeedback(''), 5000);
-                  }}
-                  className="px-3.5 py-2.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold transition-colors flex items-center space-x-1.5 cursor-pointer no-print"
-                  title="Download editable Microsoft Word .doc file (Recommended if standard browser printing fails)"
-                >
-                  <Download className="w-4 h-4 text-blue-600 shrink-0" />
-                  <span className="hidden md:inline">Download Word</span>
-                  <span className="md:hidden">Word</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    const currentTitle = activeTab === 'application' ? 'Application_Letter' : 'Cover_Letter';
-                    downloadPDFDocument(`${personalInfo.fullName || 'Candidate'}_${currentTitle}`);
-                  }}
+                  onClick={downloadPDFDocument}
                   className="px-4 py-2.5 bg-[#0B5ED7] hover:bg-[#044dbd] text-white rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer no-print shadow-sm"
-                  title="Generate and download a high-resolution, pixel-perfect executive PDF directly to your device (Recommended)"
+                  title="Download PDF directly"
                 >
-                  <Printer className="w-4 h-4 shrink-0" />
+                  <Download className="w-4 h-4 shrink-0" />
                   <span>Download PDF</span>
                 </button>
 
                 <button
                   onClick={() => {
-                    setSaveFeedback('Launching browser printing stream... If nothing happens, click "Download PDF" or "Download Word" above. ✓');
+                    setSaveFeedback('Launching browser printing stream... If nothing happens, click "Download PDF" above. ✓');
                     setTimeout(() => setSaveFeedback(''), 6000);
                     handlePrintDocument();
                   }}
@@ -2501,7 +2157,7 @@ export default function App() {
                   }}
                 >
                   
-                  <div className="space-y-6">
+                  <div className="space-y-5">
                     {(() => {
                       const activeText = activeTab === 'application' ? editedApplication : editedCover;
                       const activeStandard = generatedResult?.regionalStandard || getRegionalStandard(generatedResult?.request?.targetCountry || targetCountry);
@@ -2510,8 +2166,8 @@ export default function App() {
 
                       if (!parsed.isParsed) {
                         return (
-                          <div className="space-y-6">
-                            <div className="flex justify-between items-start border-b border-slate-100 pb-5">
+                          <div className="space-y-5">
+                            <div className="flex justify-between items-start border-b border-slate-100 pb-4">
                               <div>
                                 <h1 className="font-display font-extrabold text-lg text-slate-900 leading-snug">
                                   {personalInfo.fullName}
@@ -2537,8 +2193,8 @@ export default function App() {
 
                       if (activeStandard === 'East African Formal') {
                         return (
-                          <div className="space-y-5">
-                            <div className="flex flex-col items-end text-right ml-auto max-w-[320px] text-[11px] text-slate-650 space-y-1.5 leading-tight">
+                          <div className="space-y-4">
+                            <div className="flex flex-col items-end text-right ml-auto max-w-[320px] text-[11px] text-slate-650 space-y-1 leading-tight">
                               <h1 className="font-sans font-bold text-[13px] text-slate-900 leading-snug">
                                 {personalInfo.fullName}
                               </h1>
@@ -2547,17 +2203,17 @@ export default function App() {
                                   {line}
                                 </p>
                               ))}
-                              <p className="font-normal text-slate-700 pt-2.5">
+                              <p className="font-normal text-slate-700 pt-2">
                                 {stripMarkdownAndHtml(parsed.date) || new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
                               </p>
                             </div>
 
-                            <div className="text-left max-w-[320px] text-[11.5px] text-slate-600 space-y-0.5 leading-snug pt-4">
+                            <div className="text-left max-w-[320px] text-[11.5px] text-slate-600 space-y-0.5 leading-snug pt-3">
                               <div className="whitespace-pre-line">{stripMarkdownAndHtml(parsed.employer)}</div>
                             </div>
 
                             {parsed.subject && (
-                              <div className="py-2">
+                              <div className="py-1">
                                 <p className="font-bold underline uppercase text-slate-900 text-xs text-center md:text-left leading-normal">
                                   {stripMarkdownAndHtml(parsed.subject)}
                                 </p>
@@ -2568,11 +2224,11 @@ export default function App() {
                               {stripMarkdownAndHtml(parsed.salutation)}
                             </div>
 
-                            <div className="whitespace-pre-line text-slate-800 leading-relaxed font-normal tracking-wide text-[11.5px] space-y-4 pt-1">
+                            <div className="whitespace-pre-line text-slate-800 leading-relaxed font-normal tracking-wide text-[11.5px] space-y-3 pt-0.5">
                               {stripMarkdownAndHtml(parsed.body)}
                             </div>
 
-                            <div className="pt-2 text-left text-[11.5px]">
+                            <div className="pt-1 text-left text-[11.5px]">
                               <p className="font-semibold text-slate-800">{stripMarkdownAndHtml(parsed.closing)}</p>
                             </div>
                           </div>
@@ -2581,8 +2237,8 @@ export default function App() {
 
                       if (activeStandard === 'UK Professional') {
                         return (
-                          <div className="space-y-4 text-[11.5px]">
-                            <div className="flex justify-between items-center border-b border-slate-100 pb-3 mb-2">
+                          <div className="space-y-3 text-[11.5px]">
+                            <div className="flex justify-between items-center border-b border-slate-100 pb-3 mb-1">
                               <div>
                                 <h1 className="font-sans font-bold text-base text-slate-900 tracking-tight">{personalInfo.fullName}</h1>
                                 <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">{professionalInfo.currentPosition}</p>
@@ -2593,23 +2249,23 @@ export default function App() {
                               </div>
                             </div>
 
-                            <div className="text-left text-slate-400 text-[10px] uppercase font-bold tracking-widest pt-2">
+                            <div className="text-left text-slate-400 text-[10px] uppercase font-bold tracking-widest pt-1">
                               {stripMarkdownAndHtml(parsed.date)}
                             </div>
 
-                            <div className="text-left max-w-[320px] text-[11.5px] text-slate-600 leading-tight pt-1 whitespace-pre-line">
+                            <div className="text-left max-w-[320px] text-[11.5px] text-slate-600 leading-tight pt-0.5 whitespace-pre-line">
                               {stripMarkdownAndHtml(parsed.employer)}
                             </div>
 
-                            <div className="text-left font-semibold text-slate-800 pt-3">
+                            <div className="text-left font-semibold text-slate-800 pt-2">
                               {stripMarkdownAndHtml(parsed.salutation)}
                             </div>
 
-                            <div className="whitespace-pre-line text-slate-800 leading-relaxed font-normal space-y-4 pt-1">
+                            <div className="whitespace-pre-line text-slate-800 leading-relaxed font-normal space-y-3 pt-0.5">
                               {stripMarkdownAndHtml(parsed.body)}
                             </div>
 
-                            <div className="pt-2 text-left">
+                            <div className="pt-1 text-left">
                               <p className="font-semibold text-slate-800">{stripMarkdownAndHtml(parsed.closing)}</p>
                             </div>
                           </div>
@@ -2618,8 +2274,8 @@ export default function App() {
 
                       if (activeStandard === 'North American ATS') {
                         return (
-                          <div className="space-y-4 text-[11px] font-sans tracking-normal leading-relaxed text-slate-800">
-                            <div className="border-b border-slate-200 pb-3 mb-2">
+                          <div className="space-y-3 text-[11px] font-sans tracking-normal leading-relaxed text-slate-800">
+                            <div className="border-b border-slate-200 pb-3 mb-1">
                               <h1 className="font-sans font-extrabold text-base text-slate-900 uppercase tracking-tight">{personalInfo.fullName}</h1>
                               <p className="text-slate-600 font-bold">{professionalInfo.currentPosition}</p>
                               <p className="text-slate-500 pt-1">
@@ -2631,19 +2287,19 @@ export default function App() {
                               <p>{stripMarkdownAndHtml(parsed.date)}</p>
                             </div>
 
-                            <div className="text-left max-w-[320px] text-slate-600 leading-tight pt-1 whitespace-pre-line">
+                            <div className="text-left max-w-[320px] text-slate-600 leading-tight pt-0.5 whitespace-pre-line">
                               {stripMarkdownAndHtml(parsed.employer)}
                             </div>
 
-                            <div className="text-left font-bold text-slate-900 pt-2">
+                            <div className="text-left font-bold text-slate-900 pt-1">
                               {stripMarkdownAndHtml(parsed.salutation)}
                             </div>
 
-                            <div className="whitespace-pre-line text-slate-800 font-normal leading-relaxed space-y-4 pt-1">
+                            <div className="whitespace-pre-line text-slate-800 font-normal leading-relaxed space-y-3 pt-0.5">
                               {stripMarkdownAndHtml(parsed.body)}
                             </div>
 
-                            <div className="pt-2 text-left">
+                            <div className="pt-1 text-left">
                               <p className="font-semibold text-slate-800">{stripMarkdownAndHtml(parsed.closing)}</p>
                             </div>
                           </div>
@@ -2652,8 +2308,8 @@ export default function App() {
 
                       if (activeStandard === 'Gulf Professional') {
                         return (
-                          <div className="space-y-4 text-[11.5px] leading-snug">
-                            <div className="flex justify-between items-start border-b-2 border-slate-900 pb-4 mb-2">
+                          <div className="space-y-3 text-[11.5px] leading-snug">
+                            <div className="flex justify-between items-start border-b-2 border-slate-900 pb-3 mb-1">
                               <div>
                                 <h1 className="font-sans font-extrabold text-base text-slate-900 tracking-tight">{personalInfo.fullName}</h1>
                                 <p className="text-[10px] text-slate-500 uppercase font-semibold tracking-wider">{professionalInfo.currentPosition}</p>
@@ -2665,7 +2321,7 @@ export default function App() {
                               </div>
                             </div>
 
-                            <div className="flex justify-between items-end pt-2">
+                            <div className="flex justify-between items-end pt-1">
                               <div className="text-left max-w-[320px] text-slate-600 leading-tight text-[11px] whitespace-pre-line">
                                 {stripMarkdownAndHtml(parsed.employer)}
                               </div>
@@ -2675,20 +2331,20 @@ export default function App() {
                             </div>
 
                             {parsed.subject && (
-                              <div className="py-2 border-y border-slate-100 font-bold text-slate-900 text-xs">
+                              <div className="py-1 border-y border-slate-100 font-bold text-slate-900 text-xs">
                                 <p className="uppercase">{stripMarkdownAndHtml(parsed.subject)}</p>
                               </div>
                             )}
 
-                            <div className="text-left font-bold text-slate-800 pt-1">
+                            <div className="text-left font-bold text-slate-800 pt-0.5">
                               {stripMarkdownAndHtml(parsed.salutation)}
                             </div>
 
-                            <div className="whitespace-pre-line text-slate-800 leading-relaxed font-normal space-y-4 pt-1">
+                            <div className="whitespace-pre-line text-slate-800 leading-relaxed font-normal space-y-3 pt-0.5">
                               {stripMarkdownAndHtml(parsed.body)}
                             </div>
 
-                            <div className="pt-2 text-left">
+                            <div className="pt-1 text-left">
                               <p className="font-semibold text-slate-800">{stripMarkdownAndHtml(parsed.closing)}</p>
                             </div>
                           </div>
@@ -2696,8 +2352,8 @@ export default function App() {
                       }
 
                       return (
-                        <div className="space-y-4 text-[11.5px] font-sans">
-                          <div className="flex justify-between items-start border-b border-slate-200 pb-4 mb-2">
+                        <div className="space-y-3 text-[11.5px] font-sans">
+                          <div className="flex justify-between items-start border-b border-slate-200 pb-3 mb-1">
                             <div>
                               <h1 className="font-sans font-light text-xl text-slate-900 tracking-tight">{personalInfo.fullName}</h1>
                               <p className="text-[10px] text-slate-400 font-mono">{professionalInfo.currentPosition}</p>
@@ -2708,23 +2364,23 @@ export default function App() {
                             </div>
                           </div>
 
-                          <div className="text-left text-[11px] text-slate-400 font-semibold pt-2">
+                          <div className="text-left text-[11px] text-slate-400 font-semibold pt-1">
                             {stripMarkdownAndHtml(parsed.date)}
                           </div>
 
-                          <div className="text-left max-w-[320px] text-slate-600 leading-tight pt-1 whitespace-pre-line">
+                          <div className="text-left max-w-[320px] text-slate-600 leading-tight pt-0.5 whitespace-pre-line">
                             {stripMarkdownAndHtml(parsed.employer)}
                           </div>
 
-                          <div className="text-left font-semibold text-slate-800 pt-3">
+                          <div className="text-left font-semibold text-slate-800 pt-2">
                             {stripMarkdownAndHtml(parsed.salutation)}
                           </div>
 
-                          <div className="whitespace-pre-line text-slate-800 leading-relaxed font-normal space-y-4 pt-1">
+                          <div className="whitespace-pre-line text-slate-800 leading-relaxed font-normal space-y-3 pt-0.5">
                             {stripMarkdownAndHtml(parsed.body)}
                           </div>
 
-                          <div className="pt-2 text-left">
+                          <div className="pt-1 text-left">
                             <p className="font-semibold text-slate-800">{stripMarkdownAndHtml(parsed.closing)}</p>
                           </div>
                         </div>
@@ -2732,31 +2388,31 @@ export default function App() {
                     })()}
                   </div>
 
-                  <div className="pt-8 flex flex-col items-start space-y-1">
-                    
+                  {/* BOTTOM SIGNATURE BLOCK - Compact */}
+                  <div className="pt-3 flex flex-col items-start space-y-0.5">
                     {layoutConfig.signatureType === 'uploaded' && personalInfo.signatureImage ? (
-                      <div className="relative py-1">
+                      <div className="relative py-0.5">
                         <img 
                           src={personalInfo.signatureImage} 
                           alt="Manual Signature Scan" 
-                          className="h-10 max-w-[150px] object-contain select-none"
+                          className="h-8 max-w-[120px] object-contain select-none"
                         />
                       </div>
                     ) : personalInfo.signatureText ? (
-                      <div className="py-2.5 select-none transform ml-1 relative">
-                        <span className={`font-signature text-3xl ${layoutConfig.signatureColor} ${layoutConfig.signatureSlant} inline-block`}>
+                      <div className="py-1 select-none transform ml-1 relative">
+                        <span className={`font-signature text-2xl ${layoutConfig.signatureColor} ${layoutConfig.signatureSlant} inline-block`}>
                           {personalInfo.signatureText}
                         </span>
                       </div>
                     ) : (
-                      <div className="w-32 h-6 border-b border-dashed border-slate-300 mt-2"></div>
+                      <div className="w-24 h-4 border-b border-dashed border-slate-300 mt-1"></div>
                     )}
 
-                    <div className="text-[12px] font-bold text-slate-800 tracking-tight leading-tight pt-1">
+                    <div className="text-[11px] font-bold text-slate-800 tracking-tight leading-tight pt-0.5">
                       {personalInfo.fullName}
                     </div>
                     {activeStandard === 'East African Formal' ? (
-                      <div className="text-[11px] text-slate-600 font-normal leading-normal mt-0.5 space-y-0.5">
+                      <div className="text-[10px] text-slate-600 font-normal leading-tight mt-0 space-y-0">
                         <p>Phone: {personalInfo.phone}</p>
                         <p>Email: {personalInfo.email}</p>
                       </div>
@@ -2777,7 +2433,7 @@ export default function App() {
               <div>
                 <span className="font-bold text-slate-800 block">Pro-Tip for exact A4 PDF downloads:</span>
                 <p className="leading-relaxed mt-0.5">
-                  When the standard Print window fires up, ensure you set your destination printer parameter to <span className="font-bold text-[#198754]">"Save as PDF"</span>. Open "More settings" inside options, set margins to <span className="font-bold">"None"</span>, and check <span className="font-bold">"Background graphics"</span> to get a flawless executive-level PDF document copy of your layout.
+                  Click the <span className="font-bold text-[#0B5ED7]">Download PDF</span> button for instant auto-download with your name in the filename. No extra steps needed!
                 </p>
               </div>
             </div>
