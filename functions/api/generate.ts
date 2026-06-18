@@ -132,27 +132,25 @@ Andika kwa mtindo unaotumika katika:
 
 LUGHA: Kiswahili rasmi cha Tanzania, Kiswahili cha kitaaluma, Kiswahili cha serikali.
 
-NAMNA ZA KUANZA BARUA (Chagua mojawapo inayofaa zaidi):
-1. "Tafadhali rejea somo tajwa la barua hapo juu. Mimi ni [Jina], kijana Mtanzania..."
-2. "Husika na Kichwa cha habari hapo juu. Mimi ni [Jina]..."
+SHERIA MUHIMU SANA - USIVUMBUE DATA:
+1. USITAJIE umri wa mwombaji — isipokuwa umetolewa kwenye taarifa
+2. USITAJIE elimu — isipokuwa imetolewa na mwombaji NA inaendana na kazi
+3. USITAJIE mwaka wa kuhitimu — isipokuwa umetolewa
+4. USITAJIE jina la chuo — isipokuwa limetolewa
+5. USITAJIE uzoefu ambao haujatajwa
+6. TUMIA TU taarifa ulizopewa — usizivumbue kamwe
+
+NAMNA ZA KUANZA BARUA (Chagua mojawapo inayofaa):
+1. "Tafadhali rejea somo tajwa la barua hapo juu."
+2. "Husika na Kichwa cha habari hapo juu."
 3. "Kwa heshima na taadhima, ninaomba nafasi ya kazi ya..."
 4. "Ninapenda kuwasilisha maombi yangu ya kazi kwa heshima kubwa, kwa ajili ya nafasi ya..."
 
-MUUNDO SAHIHI WA AYA (Andika aya 4):
-Aya 1 - REJEA NA KUTAMBULISHA:
-"Tafadhali rejea somo tajwa la barua hapo juu. Mimi ni [Jina], kijana Mtanzania mwenye umri wa miaka [X]. Nimehitimu masomo yangu ya [Shahada/Stashahada] katika [Chuo] mwaka [Mwaka] na kutunukiwa [Stashahada/Shahada]."
-
-Aya 2 - UWEZO NA UZOEFU:
-"Kwa mujibu wa tangazo lililotolewa na [Taasisi/Kampuni], ninaomba nafasi ya kazi ya [Nafasi]. Nina uwezo wa kufanya kazi hii kwa ufasaha/ufanisi/uweledi na kwa kuzingatia miiko ya kazi yangu. Nina uelewa mpana wa..."
-
-Aya 3 - NYARAKA NA MAHITAJI:
-"Pamoja na barua hii nimeambatanisha vivuli vya vyeti vyangu vya taaluma na mahitaji mengine yote kwa mujibu wa tangazo. Vitu vyote vimeambatanishwa kwenye mfumo."
-
-Aya 4 - MATARAJIO:
-"Natumai ombi langu litapokelewa na kujibiwa."
-AU "Natumaini ombi langu litakubaliwa."
-AU "Nina imani ombi langu litakubaliwa."
-AU "Ninategemea majibu mazuri kutoka kwako na nipo tayari kwa usaili siku yoyote nitakayohitajika."
+MUUNDO WA AYA (Andika aya 3-4 kulingana na taarifa zilizopo):
+Aya 1: Rejea na kutambulisha — tumia taarifa za mwombaji ULIZOPEWA PEKEE
+Aya 2: Uwezo na uzoefu — eleza ujuzi unaolingana na kazi, tumia taarifa ulizopewa
+Aya 3: Nyaraka — "Pamoja na barua hii nimeambatanisha vivuli vya vyeti vyangu vya taaluma na mahitaji mengine yote kwa mujibu wa tangazo."
+Aya 4: Matarajio — "Natumai ombi langu litapokelewa na kujibiwa."
 
 MANENO YALIYOKATAZWA KABISA (USIYATUMIE):
 ❌ Nina shauku kubwa
@@ -163,17 +161,14 @@ MANENO YALIYOKATAZWA KABISA (USIYATUMIE):
 ❌ Asante kwa kuangalia maombi yangu
 ❌ Natumai kusikia kutoka kwako hivi karibuni
 ❌ Kwa heshima kubwa (kama closing)
+❌ mwenye umri wa miaka... (isipokuwa umetolewa kwenye data)
 ❌ elimu ya msingi na sekondari
-❌ mhitimu wa shule ya msingi
-❌ mhitimu wa elimu ya msingi
+❌ mhitimu wa shule ya msingi / elimu ya msingi
 
 MANENO SAHIHI YA KUTUMIA:
 ✓ Tafadhali rejea somo tajwa la barua hapo juu
 ✓ Husika na Kichwa cha habari hapo juu
 ✓ Kwa mujibu wa tangazo lililotolewa na...
-✓ Mimi ni kijana Mtanzania mwenye umri wa miaka...
-✓ Nimehitimu masomo yangu ya...
-✓ na kutunukiwa stashahada/shahada ya...
 ✓ Nina uwezo wa kufanya kazi hii kwa ufasaha
 ✓ Nina uwezo wa kufanya kazi kwa uweledi
 ✓ Ninauwezo wa kufanya kazi kwa ufanisi
@@ -188,23 +183,10 @@ MANENO SAHIHI YA KUTUMIA:
 ✓ Wako mwaminifu,
 ✓ Wako katika ujenzi wa Taifa
 
-KUHUSU ELIMU (Sheria Muhimu Sana):
-1. Ikiwa mwombaji HAJAWEKA elimu yake — USITAJIE elimu kabisa, taja uzoefu na ujuzi badala yake
-2. Ikiwa elimu ya mwombaji HAIENDANI na kazi anayoomba — USITAJIE elimu
-3. Ikiwa elimu inaendana na kazi — taja kwa kifupi: "Nimehitimu [Shahada] katika [Chuo] mwaka [Mwaka]"
-4. USISEME kamwe "mhitimu wa elimu ya msingi na sekondari" au "nimehitimu kidato cha nne"
-
-MFANO SAHIHI WA BARUA KAMILI (Fuata mtindo huu kwa ukaribu):
-"Tafadhali rejea somo tajwa la barua hapo juu. Mimi ni Juma Shabani, kijana Mtanzania mwenye umri wa miaka 28. Nimehitimu masomo yangu ya Shahada ya Kwanza ya Ualimu katika Chuo Kikuu cha Dar es Salaam mwaka 2020 na kutunukiwa Shahada ya Elimu.
-Kwa mujibu wa tangazo lililotolewa na Wizara ya Elimu, ninaomba nafasi ya kazi ya Mwalimu wa Hisabati. Nina uwezo wa kufanya kazi hii kwa ufasaha na kwa kuzingatia miiko ya kazi yangu. Nina uelewa mpana wa mbinu za ufundishaji na usimamizi wa darasa.
-Pamoja na barua hii nimeambatanisha vivuli vya vyeti vyangu vya taaluma na mahitaji mengine yote kwa mujibu wa tangazo.
-Natumai ombi langu litapokelewa na kujibiwa.
-Wako katika ujenzi wa Taifa."
-
 SHERIA ZA JUMLA:
-1. Jaza SEHEMU YA MWILI tu — usibadilishe anwani, tarehe, wala sehemu ya sahihi
+1. Jaza SEHEMU YA MWILI tu — usibadilishe anwani, tarehe, wala sahihi
 2. Rudisha template YOTE ikiwa imejazwa
-3. Usiongeze simu wala barua pepe kwenye saini
+3. USIVUMBUE taarifa ambazo hazijatolewa — tumia ulichopewa tu
 4. Barua ionekane imeandikwa na Mtanzania halisi
 5. USITUMIE maneno ya tafsiri ya Kiingereza
 6. Usirudie barua mara mbili
@@ -216,20 +198,21 @@ RULES:
 2. Do NOT add phone, email, or address in the signature section
 3. Do NOT write the name after the closing
 4. Keep the body to 3 short paragraphs (200 words max)
-5. Do NOT repeat the entire letter twice`;
+5. Do NOT repeat the entire letter twice
+6. ONLY use data provided - do NOT invent education, age, graduation year, or university names`;
 
     const appUserPrompt = isSwahili
       ? `Andika barua ya maombi ya kazi kwa Kiswahili cha Mtanzania halisi.
 
-TAARIFA ZA MWOMBAJI:
+TAARIFA ZA MWOMBAJI (TUMIA HIZI TU - USIVUMBUE):
 Jina Kamili: ${fullName}
 Simu: ${data.personalInfo.phone}
 Barua Pepe: ${data.personalInfo.email}
 Anwani: ${data.personalInfo.address}
-Elimu: ${data.professionalInfo.highestEducation || 'Haijabainishwa'}
+Elimu: ${data.professionalInfo.highestEducation || 'Haijatajwa'}
 Uzoefu: Miaka ${data.professionalInfo.yearsOfExperience}
 Nafasi ya Sasa: ${data.professionalInfo.currentPosition}
-Ujuzi: ${data.professionalInfo.keySkills || 'Ujuzi wa kitaaluma'}
+Ujuzi: ${data.professionalInfo.keySkills || 'Haijatajwa'}
 
 TAARIFA ZA KAZI:
 Nafasi: ${data.jobInfo.jobTitle}
@@ -242,13 +225,13 @@ Nchi: ${data.targetCountry}
 TEMPLATE YA KUJAZA:
 ${letterTemplate}
 
-Badilisha [ANDIKA MWILI WA BARUA HAPA] na aya 4 kwa Kiswahili sanifu cha Mtanzania.
-KUMBUKA: Tumia "Tafadhali rejea..." au "Kwa heshima na taadhima..." kuanza.
-USITAJIE elimu kama haijawekwa au haiendani na kazi.
+Badilisha [ANDIKA MWILI WA BARUA HAPA] na aya 3-4 kwa Kiswahili sanifu.
+MUHIMU: Usitaje umri, elimu, chuo, au mwaka wa kuhitimu isipokuwa vimetolewa kwenye taarifa za mwombaji hapo juu.
+Kama elimu haijatajwa au ni "Haijatajwa" — USITAJIE elimu kabisa.
 Rudisha template YOTE mara MOJA.`
-      : `Fill in the SECTION_BODY of this letter template. Return the COMPLETE template with body filled.
+      : `Fill in the SECTION_BODY of this letter template. Return the COMPLETE template.
 
-APPLICANT INFO:
+APPLICANT INFO (use ONLY what is provided - do not invent):
 Name: ${fullName}
 Education: ${data.professionalInfo.highestEducation}
 Experience: ${data.professionalInfo.yearsOfExperience} years as ${data.professionalInfo.currentPosition}
@@ -305,22 +288,22 @@ Yours sincerely,
 ${fullName}`;
 
     const coverSystemPrompt = isSwahili
-      ? `Andika barua ya kuambatana kwa Kiswahili cha Mtanzania. Tumia mtindo wa UTUMISHI. Weka fupi - aya 2-3. Anza kwa "Tafadhali rejea..." au "Kwa heshima...". Usitumie "shauku", "furahi", "hamasa", "asante kwa kuangalia", "natamai kusikia". Usitajie elimu kama haijawekwa.`
-      : `Fill in ONLY the body of a cover letter template. Return the COMPLETE template. Keep it short - 150 words max. Do NOT repeat the name in the closing.`;
+      ? `Andika barua ya kuambatana kwa Kiswahili cha Mtanzania. Tumia mtindo wa UTUMISHI. Weka fupi - aya 2-3. Anza kwa "Tafadhali rejea..." au "Kwa heshima...". USIVUMBUE data - tumia tu ulichopewa. Usitumie "shauku", "furahi", "hamasa".`
+      : `Fill in ONLY the body of a cover letter template. Return the COMPLETE template. Keep it short - 150 words max. Do NOT repeat the name in the closing. Do NOT invent data.`;
 
     const coverUserPrompt = isSwahili
-      ? `Andika barua fupi ya kuambatana kwa Kiswahili cha Mtanzania:
+      ? `Andika barua fupi ya kuambatana kwa Kiswahili cha Mtanzania.
 
-MWOMBAJI: ${fullName} | ${data.professionalInfo.highestEducation || 'Elimu haijabainishwa'} | Miaka ${data.professionalInfo.yearsOfExperience}
-UJUZI: ${data.professionalInfo.keySkills || 'Utaalamu wa kitaaluma'}
+MWOMBAJI (Tumia hizi tu): ${fullName} | ${data.professionalInfo.highestEducation || 'Haijatajwa'} | Miaka ${data.professionalInfo.yearsOfExperience}
+UJUZI: ${data.professionalInfo.keySkills || 'Haijatajwa'}
 KAZI: ${data.jobInfo.jobTitle} katika ${data.jobInfo.companyName}
-MAELEZO YA KAZI: ${data.jobInfo.jobDescription.substring(0, 300)}
+MAELEZO: ${data.jobInfo.jobDescription.substring(0, 300)}
 NCHI: ${data.targetCountry}
 
 TEMPLATE:
 ${coverTemplate}
 
-Badilisha [ANDIKA MWILI WA BARUA YA KUAMBATANA HAPA] na aya 2-3. Rudisha template YOTE.`
+Badilisha [ANDIKA MWILI WA BARUA YA KUAMBATANA HAPA] na aya 2-3. USIVUMBUE taarifa. Rudisha template YOTE.`
       : `Fill in this cover letter template:
 
 APPLICANT: ${fullName}
