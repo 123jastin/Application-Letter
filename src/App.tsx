@@ -315,6 +315,19 @@ export default function App() {
   const [isDraggingFile, setIsDraggingFile] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Keep personalInfo.address in sync with structured fields
+  useEffect(() => {
+    const fullAddress = [
+      personalPOBox ? `P.O. Box ${personalPOBox}` : '',
+      personalCity,
+      personalRegion,
+    ].filter(Boolean).join(', ');
+    
+    if (fullAddress && fullAddress !== personalInfo.address) {
+      setPersonalInfo(prev => ({ ...prev, address: fullAddress }));
+    }
+  }, [personalPOBox, personalCity, personalRegion]);
+
   // Auto-save ALL form data to localStorage
   useEffect(() => {
     const formData = {
@@ -674,13 +687,6 @@ export default function App() {
     });
 
     try {
-      // Build full address from structured fields
-      const fullPersonalAddress = [
-        personalPOBox ? `P.O. Box ${personalPOBox}` : '',
-        personalCity,
-        personalRegion,
-      ].filter(Boolean).join(', ');
-
       // Filter education - don't show Standard 7, Form 4, Form 6, High School
       const lowEducation = ['standard 7', 'standard seven', 'form 4', 'form four', 
         'form 6', 'form six', 'high school', 'high-school', 'secondary', 'o-level', 'a-level'];
@@ -704,10 +710,7 @@ export default function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          personalInfo: {
-            ...personalInfo,
-            address: fullPersonalAddress, // Override with structured address
-          },
+          personalInfo, // Already has the correct address
           professionalInfo: {
             ...professionalInfo,
             highestEducation: educationToShow, // Filtered education
