@@ -856,17 +856,17 @@ export default function App() {
 
   const getMarginStyle = () => {
     switch (layoutConfig.marginSize) {
-      case 'compact': return 'py-12 px-14';
-      case 'wide': return 'py-20 px-24';
-      default: return 'py-16 px-20';
+      case 'compact': return 'py-8 px-10';
+      case 'wide': return 'py-12 px-16';
+      default: return 'py-10 px-14';
     }
   };
 
   const getFontSizeStyle = () => {
     switch (layoutConfig.fontSize) {
-      case 'small': return 'text-[15px] leading-[1.7] text-slate-950 font-medium';
-      case 'large': return 'text-[18px] leading-[1.8] text-slate-950 font-medium';
-      default: return 'text-[16px] leading-[1.7] text-slate-950 font-medium';
+      case 'small': return 'text-[20px] leading-[1.8] text-slate-950 font-medium';
+      case 'large': return 'text-[24px] leading-[1.9] text-slate-950 font-medium';
+      default: return 'text-[22px] leading-[1.8] text-slate-950 font-medium';
     }
   };
 
@@ -1653,8 +1653,7 @@ export default function App() {
                   </p>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <button
-                      type="button"
+                    <button                      type="button"
                       onClick={() => setTargetLanguage('English')}
                       className={`p-4 border rounded-xl text-left transition-all flex items-center justify-between cursor-pointer ${
                         targetLanguage === 'English'
@@ -2161,22 +2160,22 @@ export default function App() {
                           <div className="space-y-5">
                             <div className="flex justify-between items-start border-b border-slate-100 pb-4">
                               <div>
-                                <h1 className="font-display font-extrabold text-xl text-slate-950 leading-snug">
+                                <h1 className="font-display font-extrabold text-[26px] text-slate-950 leading-snug">
                                   {personalInfo.fullName}
                                 </h1>
-                                <p className="text-[15px] font-semibold text-slate-700 leading-tight">
+                                <p className="text-[20px] font-semibold text-slate-700 leading-tight">
                                   {professionalInfo.currentPosition}
                                 </p>
                               </div>
 
-                              <div className="text-right text-[15px] text-slate-700 space-y-0.5">
+                              <div className="text-right text-[18px] text-slate-700 space-y-0.5">
                                 <p className="font-semibold text-slate-800">{personalInfo.phone}</p>
                                 <p className="font-semibold text-slate-800">{personalInfo.email}</p>
                                 <p className="leading-snug max-w-[220px] text-slate-700">{personalInfo.address}</p>
                               </div>
                             </div>
 
-                            <div className="whitespace-pre-line text-slate-950 leading-[1.8] font-normal text-[16px] space-y-4">
+                            <div className="whitespace-pre-line text-slate-950 leading-[1.8] font-normal text-[20px] space-y-4">
                               {cleanTextFallback}
                             </div>
                           </div>
@@ -2186,41 +2185,41 @@ export default function App() {
                       if (activeStandard === 'East African Formal') {
                         return (
                           <div className="space-y-4">
-                            <div className="flex flex-col items-end text-right ml-auto max-w-[320px] text-[15px] text-slate-700 space-y-1 leading-tight">
-                              <h1 className="font-sans font-bold text-[18px] text-slate-950 leading-snug">
+                            <div className="flex flex-col items-end text-right ml-auto max-w-[320px] text-[18px] text-slate-700 space-y-1 leading-tight">
+                              <h1 className="font-sans font-bold text-[24px] text-slate-950 leading-snug">
                                 {personalInfo.fullName}
                               </h1>
                               {formatAddressLines(personalInfo.address).map((line, idx) => (
-                                <p key={idx} className="font-normal text-slate-800 text-[15px]">
+                                <p key={idx} className="font-normal text-slate-800 text-[18px]">
                                   {line}
                                 </p>
                               ))}
-                              <p className="font-normal text-slate-800 text-[15px] pt-2">
+                              <p className="font-normal text-slate-800 text-[18px] pt-2">
                                 {stripMarkdownAndHtml(parsed.date) || new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
                               </p>
                             </div>
 
-                            <div className="text-left max-w-[320px] text-[15px] text-slate-800 space-y-0.5 leading-snug pt-3">
+                            <div className="text-left max-w-[320px] text-[18px] text-slate-800 space-y-0.5 leading-snug pt-3">
                               <div className="whitespace-pre-line">{stripMarkdownAndHtml(parsed.employer)}</div>
                             </div>
 
                             {parsed.subject && (
                               <div className="py-1">
-                                <p className="font-bold underline uppercase text-slate-950 text-[15px] text-center md:text-left leading-normal">
+                                <p className="font-bold underline uppercase text-slate-950 text-[18px] text-center md:text-left leading-normal">
                                   {stripMarkdownAndHtml(parsed.subject)}
                                 </p>
                               </div>
                             )}
 
-                            <div className="text-left text-[16px] font-semibold text-slate-800">
+                            <div className="text-left text-[20px] font-semibold text-slate-800">
                               {stripMarkdownAndHtml(parsed.salutation)}
                             </div>
 
-                            <div className="whitespace-pre-line text-slate-950 leading-[1.8] font-normal text-[16px] space-y-3 pt-0.5">
+                            <div className="whitespace-pre-line text-slate-950 leading-[1.8] font-normal text-[20px] space-y-3 pt-0.5">
                               {stripMarkdownAndHtml(parsed.body)}
                             </div>
 
-                            <div className="pt-1 text-left text-[15px]">
+                            <div className="pt-1 text-left text-[18px]">
                               <p className="font-semibold text-slate-800">{stripMarkdownAndHtml(parsed.closing)}</p>
                             </div>
                           </div>
@@ -2229,36 +2228,36 @@ export default function App() {
 
                       if (activeStandard === 'UK Professional') {
                         return (
-                          <div className="space-y-3 text-[15px]">
+                          <div className="space-y-3 text-[18px]">
                             <div className="flex justify-between items-center border-b border-slate-100 pb-3 mb-1">
                               <div>
-                                <h1 className="font-sans font-bold text-[18px] text-slate-950 tracking-tight">{personalInfo.fullName}</h1>
-                                <p className="text-[14px] text-slate-700 uppercase font-bold tracking-wider">{professionalInfo.currentPosition}</p>
+                                <h1 className="font-sans font-bold text-[24px] text-slate-950 tracking-tight">{personalInfo.fullName}</h1>
+                                <p className="text-[18px] text-slate-700 uppercase font-bold tracking-wider">{professionalInfo.currentPosition}</p>
                               </div>
-                              <div className="text-right text-[14px] text-slate-700 leading-tight">
+                              <div className="text-right text-[18px] text-slate-700 leading-tight">
                                 <p className="text-slate-800">{personalInfo.phone} | {personalInfo.email}</p>
                                 <p className="text-slate-700">{personalInfo.address}</p>
                               </div>
                             </div>
 
-                            <div className="text-left text-slate-700 text-[14px] uppercase font-bold tracking-widest pt-1">
+                            <div className="text-left text-slate-700 text-[18px] uppercase font-bold tracking-widest pt-1">
                               {stripMarkdownAndHtml(parsed.date)}
                             </div>
 
-                            <div className="text-left max-w-[320px] text-[15px] text-slate-800 leading-tight pt-0.5 whitespace-pre-line">
+                            <div className="text-left max-w-[320px] text-[18px] text-slate-800 leading-tight pt-0.5 whitespace-pre-line">
                               {stripMarkdownAndHtml(parsed.employer)}
                             </div>
 
-                            <div className="text-left font-semibold text-slate-800 text-[16px] pt-2">
+                            <div className="text-left font-semibold text-slate-800 text-[20px] pt-2">
                               {stripMarkdownAndHtml(parsed.salutation)}
                             </div>
 
-                            <div className="whitespace-pre-line text-slate-950 leading-[1.8] font-normal text-[16px] space-y-3 pt-0.5">
+                            <div className="whitespace-pre-line text-slate-950 leading-[1.8] font-normal text-[20px] space-y-3 pt-0.5">
                               {stripMarkdownAndHtml(parsed.body)}
                             </div>
 
                             <div className="pt-1 text-left">
-                              <p className="font-semibold text-slate-800 text-[15px]">{stripMarkdownAndHtml(parsed.closing)}</p>
+                              <p className="font-semibold text-slate-800 text-[18px]">{stripMarkdownAndHtml(parsed.closing)}</p>
                             </div>
                           </div>
                         );
@@ -2266,33 +2265,33 @@ export default function App() {
 
                       if (activeStandard === 'North American ATS') {
                         return (
-                          <div className="space-y-3 text-[15px] font-sans tracking-normal leading-relaxed text-slate-800">
+                          <div className="space-y-3 text-[18px] font-sans tracking-normal leading-relaxed text-slate-800">
                             <div className="border-b border-slate-200 pb-3 mb-1">
-                              <h1 className="font-sans font-extrabold text-[18px] text-slate-950 uppercase tracking-tight">{personalInfo.fullName}</h1>
-                              <p className="text-slate-700 font-bold text-[15px]">{professionalInfo.currentPosition}</p>
-                              <p className="text-slate-700 pt-1 text-[14px]">
+                              <h1 className="font-sans font-extrabold text-[24px] text-slate-950 uppercase tracking-tight">{personalInfo.fullName}</h1>
+                              <p className="text-slate-700 font-bold text-[18px]">{professionalInfo.currentPosition}</p>
+                              <p className="text-slate-700 pt-1 text-[18px]">
                                 {personalInfo.address} • {personalInfo.phone} • {personalInfo.email}
                               </p>
                             </div>
 
-                            <div className="text-left text-slate-700 text-[14px]">
+                            <div className="text-left text-slate-700 text-[18px]">
                               <p>{stripMarkdownAndHtml(parsed.date)}</p>
                             </div>
 
-                            <div className="text-left max-w-[320px] text-slate-800 leading-tight pt-0.5 whitespace-pre-line text-[15px]">
+                            <div className="text-left max-w-[320px] text-slate-800 leading-tight pt-0.5 whitespace-pre-line text-[18px]">
                               {stripMarkdownAndHtml(parsed.employer)}
                             </div>
 
-                            <div className="text-left font-bold text-slate-900 text-[16px] pt-1">
+                            <div className="text-left font-bold text-slate-900 text-[20px] pt-1">
                               {stripMarkdownAndHtml(parsed.salutation)}
                             </div>
 
-                            <div className="whitespace-pre-line text-slate-950 leading-[1.8] font-normal text-[16px] space-y-3 pt-0.5">
+                            <div className="whitespace-pre-line text-slate-950 leading-[1.8] font-normal text-[20px] space-y-3 pt-0.5">
                               {stripMarkdownAndHtml(parsed.body)}
                             </div>
 
                             <div className="pt-1 text-left">
-                              <p className="font-semibold text-slate-800 text-[15px]">{stripMarkdownAndHtml(parsed.closing)}</p>
+                              <p className="font-semibold text-slate-800 text-[18px]">{stripMarkdownAndHtml(parsed.closing)}</p>
                             </div>
                           </div>
                         );
@@ -2300,13 +2299,13 @@ export default function App() {
 
                       if (activeStandard === 'Gulf Professional') {
                         return (
-                          <div className="space-y-3 text-[15px] leading-snug">
+                          <div className="space-y-3 text-[18px] leading-snug">
                             <div className="flex justify-between items-start border-b-2 border-slate-900 pb-3 mb-1">
                               <div>
-                                <h1 className="font-sans font-extrabold text-[18px] text-slate-950 tracking-tight">{personalInfo.fullName}</h1>
-                                <p className="text-[14px] text-slate-700 uppercase font-semibold tracking-wider">{professionalInfo.currentPosition}</p>
+                                <h1 className="font-sans font-extrabold text-[24px] text-slate-950 tracking-tight">{personalInfo.fullName}</h1>
+                                <p className="text-[18px] text-slate-700 uppercase font-semibold tracking-wider">{professionalInfo.currentPosition}</p>
                               </div>
-                              <div className="text-right text-[14px] text-slate-700 leading-tight">
+                              <div className="text-right text-[18px] text-slate-700 leading-tight">
                                 <p className="font-medium text-slate-800">{personalInfo.phone}</p>
                                 <p className="font-medium text-slate-800">{personalInfo.email}</p>
                                 <p className="text-slate-700">{personalInfo.address}</p>
@@ -2314,66 +2313,66 @@ export default function App() {
                             </div>
 
                             <div className="flex justify-between items-end pt-1">
-                              <div className="text-left max-w-[320px] text-slate-800 leading-tight text-[15px] whitespace-pre-line">
+                              <div className="text-left max-w-[320px] text-slate-800 leading-tight text-[18px] whitespace-pre-line">
                                 {stripMarkdownAndHtml(parsed.employer)}
                               </div>
-                              <div className="text-right text-slate-700 text-[14px] font-bold">
+                              <div className="text-right text-slate-700 text-[18px] font-bold">
                                 {stripMarkdownAndHtml(parsed.date)}
                               </div>
                             </div>
 
                             {parsed.subject && (
-                              <div className="py-1 border-y border-slate-100 font-bold text-slate-950 text-[15px]">
+                              <div className="py-1 border-y border-slate-100 font-bold text-slate-950 text-[18px]">
                                 <p className="uppercase">{stripMarkdownAndHtml(parsed.subject)}</p>
                               </div>
                             )}
 
-                            <div className="text-left font-bold text-slate-800 text-[16px] pt-0.5">
+                            <div className="text-left font-bold text-slate-800 text-[20px] pt-0.5">
                               {stripMarkdownAndHtml(parsed.salutation)}
                             </div>
 
-                            <div className="whitespace-pre-line text-slate-950 leading-[1.8] font-normal text-[16px] space-y-3 pt-0.5">
+                            <div className="whitespace-pre-line text-slate-950 leading-[1.8] font-normal text-[20px] space-y-3 pt-0.5">
                               {stripMarkdownAndHtml(parsed.body)}
                             </div>
 
                             <div className="pt-1 text-left">
-                              <p className="font-semibold text-slate-800 text-[15px]">{stripMarkdownAndHtml(parsed.closing)}</p>
+                              <p className="font-semibold text-slate-800 text-[18px]">{stripMarkdownAndHtml(parsed.closing)}</p>
                             </div>
                           </div>
                         );
                       }
 
                       return (
-                        <div className="space-y-3 text-[15px] font-sans">
+                        <div className="space-y-3 text-[18px] font-sans">
                           <div className="flex justify-between items-start border-b border-slate-200 pb-3 mb-1">
                             <div>
-                              <h1 className="font-sans font-light text-xl text-slate-950 tracking-tight">{personalInfo.fullName}</h1>
-                              <p className="text-[14px] text-slate-600 font-mono">{professionalInfo.currentPosition}</p>
+                              <h1 className="font-sans font-light text-[26px] text-slate-950 tracking-tight">{personalInfo.fullName}</h1>
+                              <p className="text-[18px] text-slate-600 font-mono">{professionalInfo.currentPosition}</p>
                             </div>
-                            <div className="text-right text-[14px] text-slate-700 space-y-0.5 leading-tight">
+                            <div className="text-right text-[18px] text-slate-700 space-y-0.5 leading-tight">
                               <p className="text-slate-800">{personalInfo.phone} | {personalInfo.email}</p>
                               <p className="max-w-[180px] leading-tight ml-auto text-slate-700">{personalInfo.address}</p>
                             </div>
                           </div>
 
-                          <div className="text-left text-[14px] text-slate-700 font-semibold pt-1">
+                          <div className="text-left text-[18px] text-slate-700 font-semibold pt-1">
                             {stripMarkdownAndHtml(parsed.date)}
                           </div>
 
-                          <div className="text-left max-w-[320px] text-slate-800 leading-tight pt-0.5 whitespace-pre-line text-[15px]">
+                          <div className="text-left max-w-[320px] text-slate-800 leading-tight pt-0.5 whitespace-pre-line text-[18px]">
                             {stripMarkdownAndHtml(parsed.employer)}
                           </div>
 
-                          <div className="text-left font-semibold text-slate-800 text-[16px] pt-2">
+                          <div className="text-left font-semibold text-slate-800 text-[20px] pt-2">
                             {stripMarkdownAndHtml(parsed.salutation)}
                           </div>
 
-                          <div className="whitespace-pre-line text-slate-950 leading-[1.8] font-normal text-[16px] space-y-3 pt-0.5">
+                          <div className="whitespace-pre-line text-slate-950 leading-[1.8] font-normal text-[20px] space-y-3 pt-0.5">
                             {stripMarkdownAndHtml(parsed.body)}
                           </div>
 
                           <div className="pt-1 text-left">
-                            <p className="font-semibold text-slate-800 text-[15px]">{stripMarkdownAndHtml(parsed.closing)}</p>
+                            <p className="font-semibold text-slate-800 text-[18px]">{stripMarkdownAndHtml(parsed.closing)}</p>
                           </div>
                         </div>
                       );
@@ -2387,29 +2386,29 @@ export default function App() {
                         <img 
                           src={personalInfo.signatureImage} 
                           alt="Manual Signature Scan" 
-                          className="h-8 max-w-[120px] object-contain select-none"
+                          className="h-10 max-w-[140px] object-contain select-none"
                         />
                       </div>
                     ) : personalInfo.signatureText ? (
                       <div className="py-1 select-none transform ml-1 relative">
-                        <span className={`font-signature text-2xl ${layoutConfig.signatureColor} ${layoutConfig.signatureSlant} inline-block`}>
+                        <span className={`font-signature text-3xl ${layoutConfig.signatureColor} ${layoutConfig.signatureSlant} inline-block`}>
                           {personalInfo.signatureText}
                         </span>
                       </div>
                     ) : (
-                      <div className="w-24 h-4 border-b border-dashed border-slate-300 mt-1"></div>
+                      <div className="w-32 h-5 border-b border-dashed border-slate-300 mt-1"></div>
                     )}
 
-                    <div className="text-[15px] font-bold text-slate-950 tracking-tight leading-tight pt-1">
+                    <div className="text-[20px] font-bold text-slate-950 tracking-tight leading-tight pt-1">
                       {personalInfo.fullName}
                     </div>
                     {activeStandard === 'East African Formal' ? (
-                      <div className="text-[14px] text-slate-800 font-normal leading-tight mt-0.5 space-y-0.5">
+                      <div className="text-[18px] text-slate-800 font-normal leading-tight mt-0.5 space-y-0.5">
                         <p>Phone: {personalInfo.phone}</p>
                         <p>Email: {personalInfo.email}</p>
                       </div>
                     ) : (
-                      <div className="text-[13px] uppercase font-semibold tracking-wider text-slate-600">
+                      <div className="text-[16px] uppercase font-semibold tracking-wider text-slate-600">
                         Applicant Profile
                       </div>
                     )}
