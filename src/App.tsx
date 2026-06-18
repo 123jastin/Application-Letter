@@ -266,6 +266,12 @@ export default function App() {
     jobUrl: ''
   });
 
+  // Company address structured fields
+  const [companyPOBox, setCompanyPOBox] = useState<string>('');
+  const [companyDistrict, setCompanyDistrict] = useState<string>('');
+  const [companyRegion, setCompanyRegion] = useState<string>('');
+  const [companyCountry, setCompanyCountry] = useState<string>('Tanzania');
+
   const [targetCountry, setTargetCountry] = useState<TargetCountry>('Tanzania');
   const [targetLanguage, setTargetLanguage] = useState<'English' | 'Swahili'>('English');
 
@@ -276,9 +282,6 @@ export default function App() {
   const [urlFetchError, setUrlFetchError] = useState<string>('');
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-
-  const [simulatedJobs, setSimulatedJobs] = useState<JobInfo[]>([]);
-  const [selectedSimulatedJobIndex, setSelectedSimulatedJobIndex] = useState<number | null>(null);
 
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [generatorStages, setGeneratorStages] = useState<string>('');
@@ -330,8 +333,6 @@ export default function App() {
         console.error("Failed to parse history");
       }
     }
-
-    fetchSimulatedJobs();
   }, []);
 
   const activeStandard = generatedResult?.regionalStandard || getRegionalStandard(generatedResult?.request?.targetCountry || targetCountry);
@@ -339,18 +340,6 @@ export default function App() {
   const savePersonalInfoLocally = (info: PersonalInfo) => {
     setPersonalInfo(info);
     localStorage.setItem('jr_personal_info', JSON.stringify(info));
-  };
-
-  const fetchSimulatedJobs = async () => {
-    try {
-      const res = await fetch('/api/simulate-jobs');
-      if (res.ok) {
-        const data = await res.json();
-        setSimulatedJobs(data.jobs || []);
-      }
-    } catch (err) {
-      console.error('Failed to fetch simulated jobs', err);
-    }
   };
 
   const fetchLetterHistory = async (email: string) => {
@@ -454,34 +443,6 @@ export default function App() {
       }
     } catch (err) {
       console.error('Failed to save letter to cloud', err);
-    }
-  };
-
-  const handleJobPrefillSimulate = (index: number) => {
-    const targetJob = simulatedJobs[index];
-    if (targetJob) {
-      setJobInfo({
-        jobTitle: targetJob.jobTitle,
-        companyName: targetJob.companyName,
-        companyAddress: targetJob.companyAddress || '',
-        jobDescription: targetJob.jobDescription,
-        jobUrl: targetJob.jobUrl || ''
-      });
-      setSelectedSimulatedJobIndex(index);
-      
-      if (targetJob.companyAddress?.includes('Kenya')) {
-        setTargetCountry('Kenya');
-      } else {
-        setTargetCountry('Tanzania');
-      }
-
-      const tempErrors = { ...formErrors };
-      delete tempErrors.jobTitle;
-      delete tempErrors.companyName;
-      delete tempErrors.jobDescription;
-      setFormErrors(tempErrors);
-
-      toastSuccess('Job loaded successfully from JobsReport API!');
     }
   };
 
@@ -636,7 +597,7 @@ export default function App() {
   };
 
   const handleGenerateLetters = async () => {
-    if (!validateStep(0) || !validateStep(1) || !validateStep(2)) {
+    if (!validateStep(0) || !validateStep(2)) {
       setActiveStep(0);
       return;
     }
@@ -660,13 +621,27 @@ export default function App() {
     });
 
     try {
+      // Build company address from structured fields
+      const structuredCompanyAddress = [
+        companyPOBox,
+        companyDistrict,
+        companyRegion,
+        companyCountry,
+      ].filter(Boolean).join(', ');
+
+      // Use structured address if available, otherwise fallback to jobInfo.companyAddress
+      const finalCompanyAddress = structuredCompanyAddress || jobInfo.companyAddress;
+
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           personalInfo,
           professionalInfo,
-          jobInfo,
+          jobInfo: {
+            ...jobInfo,
+            companyAddress: finalCompanyAddress, // Use structured address
+          },
           targetCountry,
           targetLanguage
         })
@@ -926,23 +901,6 @@ export default function App() {
           </div>
         </div>
       </header>
-
-      {simulatedJobs.length > 0 && activeStep < 4 && (
-        <div className="bg-white border-b border-slate-200 no-print px-6 py-2.5 text-center text-xs text-slate-650 flex flex-wrap items-center justify-center gap-2">
-          <span className="inline-flex items-center rounded bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-[#0B5ED7] border border-blue-100">
-            PARTNER INTEGRATION
-          </span>
-          <span className="font-medium">Premium hiring opportunities detected from regional boards. Prefill your letter in one click!</span>
-          {activeStep !== 2 && (
-            <button
-              onClick={() => { setActiveStep(2); }}
-              className="text-[#0B5ED7] font-bold hover:underline cursor-pointer ml-1"
-            >
-              View Jobs & Prefill
-            </button>
-          )}
-        </div>
-      )}
 
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col no-print">
         
@@ -1336,95 +1294,34 @@ export default function App() {
                 transition={{ duration: 0.25 }}
                 className="bg-white border border-slate-200 rounded-xl shadow-sm p-6 sm:p-10"
               >
-                
-                {simulatedJobs.length > 0 && (
-                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 mb-8">
-                    <div className="flex items-center space-x-2 mb-3">
-                      <Sparkles className="w-4 h-4 text-[#198754]" />
-                      <h4 className="text-xs font-bold uppercase tracking-widest text-slate-800 font-sans">
-                        JobsReport.online Prefill API
-                      </h4>
+                {/* ─── SECTION A: HIRING COMPANY INFORMATION ─────── */}
+                <div className="border-b border-slate-100 pb-5 mb-6">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
+                      <Briefcase className="w-4 h-4 text-[#0B5ED7]" />
                     </div>
-                    <p className="text-xs text-slate-500 mb-4 leading-relaxed">
-                      Click a job card to instantly auto-complete the target job details!
-                    </p>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      {simulatedJobs.map((job, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => handleJobPrefillSimulate(idx)}
-                          className={`text-left p-3.5 rounded-lg border transition-all cursor-pointer flex flex-col justify-between min-h-[105px] ${
-                            selectedSimulatedJobIndex === idx
-                              ? 'bg-blue-50/50 border-[#0B5ED7] ring-1 ring-blue-100'
-                              : 'bg-white border-slate-200 hover:border-slate-350'
-                          }`}
-                        >
-                          <div>
-                            <span className="font-bold text-xs text-slate-800 line-clamp-1 block">{job.jobTitle}</span>
-                            <span className="text-[10px] font-semibold text-slate-400 block -mt-0.5">{job.companyName}</span>
-                          </div>
-                          
-                          <div className="flex items-center justify-between w-full mt-3">
-                            <span className="text-[8px] font-bold uppercase bg-emerald-50 text-[#198754] px-1.5 py-0.5 rounded border border-emerald-100">
-                              One-click Fill
-                            </span>
-                            {selectedSimulatedJobIndex === idx && (
-                              <span className="text-[9px] text-[#0B5ED7] font-bold flex items-center space-x-0.5">
-                                <CheckCircle className="w-3 h-3 fill-blue-100" />
-                                <span>Selected</span>
-                              </span>
-                            )}
-                          </div>
-                        </button>
-                      ))}
+                    <div>
+                      <h2 className="font-sans font-bold text-lg text-slate-800">
+                        Hiring Company Information
+                      </h2>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Enter the employer's full address — each part on its own line for perfect letter formatting.
+                      </p>
                     </div>
-                  </div>
-                )}
-
-                <div className="border-b border-slate-100 pb-5 mb-6 flex flex-wrap items-center justify-between gap-4">
-                  <div>
-                    <h2 className="font-sans font-bold text-xl text-slate-800 flex items-center space-x-2">
-                      <FileText className="w-5 h-5 text-[#0B5ED7]" />
-                      <span>Target Job Information</span>
-                    </h2>
-                    <p className="text-xs text-slate-500 mt-1">
-                      Paste details of the position you want to target. The AI analyzes requirements to find matches.
-                    </p>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                   
-                  <div className="flex flex-col">
-                    <label className="text-xs font-bold text-slate-800 uppercase tracking-widest mb-2 flex items-center space-x-1">
-                      <span>Target Job Title</span>
-                      <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      className={`w-full px-3 py-2 bg-slate-50 border-2 rounded-md text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B5ED7]/25 focus:border-[#0B5ED7] transition-all ${
-                        formErrors.jobTitle ? 'border-red-400' : 'border-slate-300'
-                      }`}
-                      placeholder="e.g. Senior Systems Developer"
-                      value={jobInfo.jobTitle}
-                      onChange={(e) => {
-                        setJobInfo({ ...jobInfo, jobTitle: e.target.value });
-                        if (formErrors.jobTitle) setFormErrors(prev => ({ ...prev, jobTitle: '' }));
-                      }}
-                      id="input-job-title"
-                    />
-                    {formErrors.jobTitle && <p className="text-xs font-medium text-red-500 mt-1.5">{formErrors.jobTitle}</p>}
-                  </div>
-
-                  <div className="flex flex-col">
+                  {/* Company Name */}
+                  <div className="flex flex-col md:col-span-2">
                     <label className="text-xs font-bold text-slate-800 uppercase tracking-widest mb-2 flex items-center space-x-1">
                       <span>Company / Employer Name</span>
                       <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
-                      className={`w-full px-3 py-2 bg-slate-50 border-2 rounded-md text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B5ED7]/25 focus:border-[#0B5ED7] transition-all ${
+                      className={`w-full px-3 py-2.5 bg-slate-50 border-2 rounded-md text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B5ED7]/25 focus:border-[#0B5ED7] transition-all ${
                         formErrors.companyName ? 'border-red-400' : 'border-slate-300'
                       }`}
                       placeholder="e.g. CRDB Bank Plc"
@@ -1433,38 +1330,141 @@ export default function App() {
                         setJobInfo({ ...jobInfo, companyName: e.target.value });
                         if (formErrors.companyName) setFormErrors(prev => ({ ...prev, companyName: '' }));
                       }}
-                      id="input-company-name"
                     />
                     {formErrors.companyName && <p className="text-xs font-medium text-red-500 mt-1.5">{formErrors.companyName}</p>}
                   </div>
 
+                  {/* P.O. Box */}
                   <div className="flex flex-col">
                     <label className="text-xs font-bold text-slate-800 uppercase tracking-widest mb-2">
-                      Company Address (Optional)
+                      P.O. Box
                     </label>
                     <input
                       type="text"
-                      className="w-full px-3 py-2 bg-slate-50 border-2 border-slate-300 rounded-md text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B5ED7]/25 focus:border-[#0B5ED7] transition-all"
-                      placeholder="e.g. P.O. Box 7234, Azikiwe Street, Dar es Salaam"
-                      value={jobInfo.companyAddress || ''}
-                      onChange={(e) => setJobInfo({ ...jobInfo, companyAddress: e.target.value })}
+                      className="w-full px-3 py-2.5 bg-slate-50 border-2 border-slate-300 rounded-md text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B5ED7]/25 focus:border-[#0B5ED7] transition-all"
+                      placeholder="e.g. P.O. Box 7234"
+                      value={companyPOBox}
+                      onChange={(e) => setCompanyPOBox(e.target.value)}
                     />
                   </div>
 
+                  {/* District */}
                   <div className="flex flex-col">
-                    <div className="flex justify-between items-center mb-1.5">
+                    <label className="text-xs font-bold text-slate-800 uppercase tracking-widest mb-2">
+                      District / Area
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full px-3 py-2.5 bg-slate-50 border-2 border-slate-300 rounded-md text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B5ED7]/25 focus:border-[#0B5ED7] transition-all"
+                      placeholder="e.g. Azikiwe Street, Kijitonyama"
+                      value={companyDistrict}
+                      onChange={(e) => setCompanyDistrict(e.target.value)}
+                    />
+                  </div>
+
+                  {/* Region / City */}
+                  <div className="flex flex-col">
+                    <label className="text-xs font-bold text-slate-800 uppercase tracking-widest mb-2">
+                      City / Region
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full px-3 py-2.5 bg-slate-50 border-2 border-slate-300 rounded-md text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B5ED7]/25 focus:border-[#0B5ED7] transition-all"
+                      placeholder="e.g. Dar es Salaam"
+                      value={companyRegion}
+                      onChange={(e) => setCompanyRegion(e.target.value)}
+                    />
+                  </div>
+
+                  {/* Country */}
+                  <div className="flex flex-col">
+                    <label className="text-xs font-bold text-slate-800 uppercase tracking-widest mb-2">
+                      Country
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full px-3 py-2.5 bg-slate-50 border-2 border-slate-300 rounded-md text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B5ED7]/25 focus:border-[#0B5ED7] transition-all"
+                      placeholder="e.g. Tanzania"
+                      value={companyCountry}
+                      onChange={(e) => setCompanyCountry(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                {/* ─── SECTION B: APPLYING JOB INFORMATION ──────── */}
+                <div className="border-b border-slate-100 pb-5 mb-6">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-8 h-8 bg-emerald-50 rounded-lg flex items-center justify-center">
+                      <FileText className="w-4 h-4 text-[#198754]" />
+                    </div>
+                    <div>
+                      <h2 className="font-sans font-bold text-lg text-slate-800">
+                        Applying Job Information
+                      </h2>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Enter the position details you're targeting.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 mb-8">
+                  
+                  {/* Job Title */}
+                  <div className="flex flex-col">
+                    <label className="text-xs font-bold text-slate-800 uppercase tracking-widest mb-2 flex items-center space-x-1">
+                      <span>Target Job Title</span>
+                      <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      className={`w-full px-3 py-2.5 bg-slate-50 border-2 rounded-md text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B5ED7]/25 focus:border-[#0B5ED7] transition-all ${
+                        formErrors.jobTitle ? 'border-red-400' : 'border-slate-300'
+                      }`}
+                      placeholder="e.g. Senior Systems Developer"
+                      value={jobInfo.jobTitle}
+                      onChange={(e) => {
+                        setJobInfo({ ...jobInfo, jobTitle: e.target.value });
+                        if (formErrors.jobTitle) setFormErrors(prev => ({ ...prev, jobTitle: '' }));
+                      }}
+                    />
+                    {formErrors.jobTitle && <p className="text-xs font-medium text-red-500 mt-1.5">{formErrors.jobTitle}</p>}
+                  </div>
+
+                </div>
+
+                {/* ─── SECTION C: JOB DESCRIPTION ────────────────── */}
+                <div className="border-b border-slate-100 pb-5 mb-6">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-8 h-8 bg-amber-50 rounded-lg flex items-center justify-center">
+                      <Globe className="w-4 h-4 text-amber-600" />
+                    </div>
+                    <div>
+                      <h2 className="font-sans font-bold text-lg text-slate-800">
+                        Paste Job Details
+                      </h2>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Paste the job link to auto-extract, or paste the full job description manually.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4 mb-8">
+                  
+                  {/* Job URL with AI Import */}
+                  <div className="flex flex-col">
+                    <div className="flex justify-between items-center mb-2">
                       <label className="text-xs font-bold text-slate-800 uppercase tracking-widest">
-                        Listing Web URL (Optional)
+                        Paste Job Link (Auto-fill with AI)
                       </label>
-                      <span className="text-[10px] text-blue-600 font-bold normal-case font-sans">
-                        Read listing with AI! ⚡
-                      </span>
+                      <span className="text-[10px] text-blue-600 font-bold normal-case">Read listing with AI! ⚡</span>
                     </div>
 
                     <div className="flex gap-2">
                       <input
                         type="text"
-                        className="flex-1 px-3 py-2 bg-slate-50 border-2 border-slate-300 rounded-md text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B5ED7]/25 focus:border-[#0B5ED7] transition-all"
+                        className="flex-1 px-3 py-2.5 bg-slate-50 border-2 border-slate-300 rounded-md text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B5ED7]/25 focus:border-[#0B5ED7] transition-all"
                         placeholder="e.g. https://jobsreport.online/view/nmb-developer-2"
                         value={jobInfo.jobUrl || ''}
                         onChange={(e) => setJobInfo({ ...jobInfo, jobUrl: e.target.value })}
@@ -1473,12 +1473,11 @@ export default function App() {
                         type="button"
                         onClick={handleScrapeJobUrl}
                         disabled={isFetchingUrl}
-                        className={`px-3.5 py-2 rounded-md text-xs font-bold border flex items-center space-x-1 border-blue-200 cursor-pointer ${
+                        className={`px-4 py-2.5 rounded-md text-xs font-bold border flex items-center space-x-1.5 border-blue-200 cursor-pointer ${
                           isFetchingUrl
                             ? 'bg-slate-100 text-[#0B5ED7] border-slate-200 cursor-not-allowed'
                             : 'bg-blue-50 text-[#0B5ED7] hover:bg-blue-100'
                         }`}
-                        title="AI scans the webpage listing content to automatically populate company, title and description details!"
                       >
                         {isFetchingUrl ? (
                           <>
@@ -1494,51 +1493,57 @@ export default function App() {
                       </button>
                     </div>
                     {urlFetchError && (
-                      <p className="text-[11px] font-semibold text-rose-500 mt-1.5 leading-snug">{urlFetchError}</p>
+                      <p className="text-[11px] font-semibold text-rose-500 mt-1.5">{urlFetchError}</p>
                     )}
                   </div>
 
-                </div>
-
-                <div className="flex flex-col mb-6">
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center space-x-1">
-                      <span>Full Job Description</span>
-                      <span className="text-red-500">*</span>
-                    </label>
-                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
-                      {jobInfo.jobDescription.length} characters
-                    </span>
+                  {/* Separator */}
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 h-px bg-slate-200"></div>
+                    <span className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">OR</span>
+                    <div className="flex-1 h-px bg-slate-200"></div>
                   </div>
-                  
-                  <textarea
-                    rows={6}
-                    className={`w-full px-3 py-2 bg-slate-50 border-2 rounded-md text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B5ED7]/25 focus:border-[#0B5ED7] transition-all ${
-                      formErrors.jobDescription ? 'border-red-400' : 'border-slate-300'
-                    }`}
-                    placeholder="Paste the duties, roles, skills, and eligibility requirements listed in the advertisement..."
-                    value={jobInfo.jobDescription}
-                    onChange={(e) => {
-                      setJobInfo({ ...jobInfo, jobDescription: e.target.value });
-                      if (formErrors.jobDescription) setFormErrors(prev => ({ ...prev, jobDescription: '' }));
-                    }}
-                    id="input-job-description"
-                  />
-                  {formErrors.jobDescription && <p className="text-xs font-medium text-red-500 mt-1.5">{formErrors.jobDescription}</p>}
+
+                  {/* Full Job Description */}
+                  <div className="flex flex-col">
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center space-x-1">
+                        <span>Paste Full Job Description</span>
+                        <span className="text-red-500">*</span>
+                      </label>
+                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                        {jobInfo.jobDescription.length} characters
+                      </span>
+                    </div>
+                    
+                    <textarea
+                      rows={7}
+                      className={`w-full px-3 py-2.5 bg-slate-50 border-2 rounded-md text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B5ED7]/25 focus:border-[#0B5ED7] transition-all ${
+                        formErrors.jobDescription ? 'border-red-400' : 'border-slate-300'
+                      }`}
+                      placeholder="Paste the duties, roles, skills, and eligibility requirements listed in the advertisement..."
+                      value={jobInfo.jobDescription}
+                      onChange={(e) => {
+                        setJobInfo({ ...jobInfo, jobDescription: e.target.value });
+                        if (formErrors.jobDescription) setFormErrors(prev => ({ ...prev, jobDescription: '' }));
+                      }}
+                    />
+                    {formErrors.jobDescription && <p className="text-xs font-medium text-red-500 mt-1.5">{formErrors.jobDescription}</p>}
+                  </div>
                 </div>
 
-                <div className="flex items-center justify-between border-t border-slate-150 pt-6 mt-8">
+                {/* Navigation Buttons */}
+                <div className="flex items-center justify-between border-t border-slate-150 pt-6">
                   <button
                     onClick={handlePrevStep}
-                    className="px-4 py-2 border border-slate-200 rounded-lg text-xs font-semibold hover:bg-slate-100 transition-colors cursor-pointer"
+                    className="px-4 py-2.5 border border-slate-200 rounded-lg text-xs font-semibold hover:bg-slate-100 transition-colors cursor-pointer"
                   >
                     Back
                   </button>
 
                   <button
                     onClick={handleNextStep}
-                    className="flex items-center space-x-1.5 bg-[#0B5ED7] hover:bg-[#044dbd] text-white px-5 py-2.5 rounded-lg font-bold text-xs transition-all cursor-pointer"
-                    id="btn-goto-step4"
+                    className="flex items-center space-x-1.5 bg-[#0B5ED7] hover:bg-[#044dbd] text-white px-6 py-2.5 rounded-lg font-bold text-xs transition-all cursor-pointer"
                   >
                     <span>Next: Country Standards</span>
                     <ChevronRight className="w-4 h-4" />
@@ -1866,8 +1871,11 @@ export default function App() {
                     jobDescription: '',
                     jobUrl: ''
                   });
+                  setCompanyPOBox('');
+                  setCompanyDistrict('');
+                  setCompanyRegion('');
+                  setCompanyCountry('Tanzania');
                   setGeneratedResult(null);
-                  setSelectedSimulatedJobIndex(null);
                   setActiveStep(0);
                 }
               }}
