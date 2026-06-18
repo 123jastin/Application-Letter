@@ -251,6 +251,11 @@ export default function App() {
     signatureImage: ''
   });
 
+  // Personal address structured fields
+  const [personalPOBox, setPersonalPOBox] = useState<string>('');
+  const [personalCity, setPersonalCity] = useState<string>('');
+  const [personalRegion, setPersonalRegion] = useState<string>('');
+
   const [professionalInfo, setProfessionalInfo] = useState<ProfessionalInfo>({
     highestEducation: 'Bachelor\'s Degree',
     yearsOfExperience: '3',
@@ -524,7 +529,9 @@ export default function App() {
         errors.email = 'Invalid email address format';
       }
       if (!personalInfo.phone.trim()) errors.phone = 'Phone number is required';
-      if (!personalInfo.address.trim()) errors.address = 'Physical address is required';
+      if (!personalPOBox.trim()) errors.poBox = 'P.O. Box number is required';
+      if (!personalCity.trim()) errors.city = 'City is required';
+      if (!personalRegion.trim()) errors.region = 'Region is required';
     }
 
     if (step === 2) {
@@ -621,6 +628,13 @@ export default function App() {
     });
 
     try {
+      // Build full address from structured fields
+      const fullPersonalAddress = [
+        `P.O. Box ${personalPOBox}`,
+        personalCity,
+        personalRegion,
+      ].filter(Boolean).join(', ');
+
       // Build company address from structured fields
       const structuredCompanyAddress = [
         companyPOBox,
@@ -636,7 +650,10 @@ export default function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          personalInfo,
+          personalInfo: {
+            ...personalInfo,
+            address: fullPersonalAddress, // Override with structured address
+          },
           professionalInfo,
           jobInfo: {
             ...jobInfo,
@@ -958,18 +975,37 @@ export default function App() {
                 transition={{ duration: 0.25 }}
                 className="bg-white border border-slate-200 rounded-xl shadow-sm p-6 sm:p-10"
               >
+                {/* Header with advice */}
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+                  <div className="flex items-start space-x-2.5">
+                    <Info className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h3 className="text-xs font-extrabold text-amber-800 uppercase tracking-widest mb-1">
+                        Important — Fill All Fields Carefully
+                      </h3>
+                      <p className="text-[11px] text-amber-700 leading-relaxed">
+                        Your contact details will appear at the top of every application letter. 
+                        Missing or incorrect information may cause your application to be rejected by employers. 
+                        Double-check all fields before proceeding.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="border-b border-slate-100 pb-5 mb-6">
                   <h2 className="font-sans font-bold text-xl text-slate-800 flex items-center space-x-2">
                     <User className="w-5 h-5 text-[#0B5ED7]" />
                     <span>Personal Details</span>
                   </h2>
                   <p className="text-xs text-slate-500 mt-1">
-                    Your contact information will form the elegant letterhead at the top of your custom applications.
+                    Your contact information forms the professional letterhead on all generated documents.
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* ─── NAME, PHONE, EMAIL ──────────────────────── */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
                   
+                  {/* Full Name */}
                   <div className="flex flex-col">
                     <label className="text-xs font-bold text-slate-800 uppercase tracking-widest mb-2 flex items-center space-x-1">
                       <span>Full Name</span>
@@ -977,7 +1013,7 @@ export default function App() {
                     </label>
                     <input
                       type="text"
-                      className={`w-full px-3 py-2 bg-slate-50 border-2 rounded-md text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B5ED7]/25 focus:border-[#0B5ED7] transition-all ${
+                      className={`w-full px-3 py-2.5 bg-slate-50 border-2 rounded-md text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B5ED7]/25 focus:border-[#0B5ED7] transition-all ${
                         formErrors.fullName ? 'border-red-400' : 'border-slate-300'
                       }`}
                       placeholder="e.g. Jastin Beda"
@@ -987,41 +1023,19 @@ export default function App() {
                         savePersonalInfoLocally(updated);
                         if (formErrors.fullName) setFormErrors(prev => ({ ...prev, fullName: '' }));
                       }}
-                      id="input-full-name"
                     />
                     {formErrors.fullName && <p className="text-xs font-medium text-red-500 mt-1.5">{formErrors.fullName}</p>}
                   </div>
 
-                  <div className="flex flex-col">
-                    <label className="text-xs font-bold text-slate-800 uppercase tracking-widest mb-2 flex items-center space-x-1">
-                      <span>Email Address</span>
-                      <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="email"
-                      className={`w-full px-3 py-2 bg-slate-50 border-2 rounded-md text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B5ED7]/25 focus:border-[#0B5ED7] transition-all ${
-                        formErrors.email ? 'border-red-400' : 'border-slate-300'
-                      }`}
-                      placeholder="e.g. jastin.beda@gmail.com"
-                      value={personalInfo.email}
-                      onChange={(e) => {
-                        const updated = { ...personalInfo, email: e.target.value };
-                        savePersonalInfoLocally(updated);
-                        if (formErrors.email) setFormErrors(prev => ({ ...prev, email: '' }));
-                      }}
-                      id="input-email"
-                    />
-                    {formErrors.email && <p className="text-xs font-medium text-red-500 mt-1.5">{formErrors.email}</p>}
-                  </div>
-
+                  {/* Phone Number */}
                   <div className="flex flex-col">
                     <label className="text-xs font-bold text-slate-800 uppercase tracking-widest mb-2 flex items-center space-x-1">
                       <span>Phone Number</span>
                       <span className="text-red-500">*</span>
                     </label>
                     <input
-                      type="text"
-                      className={`w-full px-3 py-2 bg-slate-50 border-2 rounded-md text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B5ED7]/25 focus:border-[#0B5ED7] transition-all ${
+                      type="tel"
+                      className={`w-full px-3 py-2.5 bg-slate-50 border-2 rounded-md text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B5ED7]/25 focus:border-[#0B5ED7] transition-all ${
                         formErrors.phone ? 'border-red-400' : 'border-slate-300'
                       }`}
                       placeholder="e.g. +255 712 345 678"
@@ -1031,50 +1045,131 @@ export default function App() {
                         savePersonalInfoLocally(updated);
                         if (formErrors.phone) setFormErrors(prev => ({ ...prev, phone: '' }));
                       }}
-                      id="input-phone"
                     />
                     {formErrors.phone && <p className="text-xs font-medium text-red-500 mt-1.5">{formErrors.phone}</p>}
                   </div>
 
-                  <div className="flex flex-col">
+                  {/* Email Address */}
+                  <div className="flex flex-col md:col-span-2">
                     <label className="text-xs font-bold text-slate-800 uppercase tracking-widest mb-2 flex items-center space-x-1">
-                      <span>Physical Address / Location</span>
+                      <span>Email Address</span>
                       <span className="text-red-500">*</span>
                     </label>
                     <input
-                      type="text"
-                      className={`w-full px-3 py-2 bg-slate-50 border-2 rounded-md text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B5ED7]/25 focus:border-[#0B5ED7] transition-all ${
-                        formErrors.address ? 'border-red-400' : 'border-slate-300'
+                      type="email"
+                      className={`w-full px-3 py-2.5 bg-slate-50 border-2 rounded-md text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B5ED7]/25 focus:border-[#0B5ED7] transition-all ${
+                        formErrors.email ? 'border-red-400' : 'border-slate-300'
                       }`}
-                      placeholder="e.g. Mikocheni B, P.O. Box 45123, Dar es Salaam"
-                      value={personalInfo.address}
+                      placeholder="e.g. jastin.beda@gmail.com"
+                      value={personalInfo.email}
                       onChange={(e) => {
-                        const updated = { ...personalInfo, address: e.target.value };
+                        const updated = { ...personalInfo, email: e.target.value };
                         savePersonalInfoLocally(updated);
-                        if (formErrors.address) setFormErrors(prev => ({ ...prev, address: '' }));
+                        if (formErrors.email) setFormErrors(prev => ({ ...prev, email: '' }));
                       }}
-                      id="input-address"
                     />
-                    {formErrors.address && <p className="text-xs font-medium text-red-500 mt-1.5">{formErrors.address}</p>}
+                    {formErrors.email && <p className="text-xs font-medium text-red-500 mt-1.5">{formErrors.email}</p>}
                   </div>
-
                 </div>
 
-                <div className="border-t border-slate-100 pt-7 mt-8">
+                {/* ─── ADDRESS SECTION ──────────────────────────── */}
+                <div className="border-t border-slate-100 pt-6 mb-6">
+                  <h3 className="text-xs font-extrabold text-slate-800 uppercase tracking-widest flex items-center space-x-2 mb-4">
+                    <MapPin className="w-4 h-4 text-[#0B5ED7]" />
+                    <span>Physical Address</span>
+                  </h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    
+                    {/* P.O. Box - Numbers Only */}
+                    <div className="flex flex-col">
+                      <label className="text-xs font-bold text-slate-800 uppercase tracking-widest mb-2 flex items-center space-x-1">
+                        <span>P.O. Box</span>
+                        <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400 font-medium pointer-events-none">
+                          P.O. Box
+                        </span>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          className={`w-full pl-[72px] pr-3 py-2.5 bg-slate-50 border-2 rounded-md text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B5ED7]/25 focus:border-[#0B5ED7] transition-all ${
+                            formErrors.poBox ? 'border-red-400' : 'border-slate-300'
+                          }`}
+                          placeholder="e.g. 1414"
+                          value={personalPOBox}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/[^0-9]/g, '');
+                            setPersonalPOBox(val);
+                            if (formErrors.poBox) setFormErrors(prev => ({ ...prev, poBox: '' }));
+                          }}
+                        />
+                      </div>
+                      {formErrors.poBox && <p className="text-xs font-medium text-red-500 mt-1.5">{formErrors.poBox}</p>}
+                    </div>
+
+                    {/* City */}
+                    <div className="flex flex-col">
+                      <label className="text-xs font-bold text-slate-800 uppercase tracking-widest mb-2 flex items-center space-x-1">
+                        <span>City / Town</span>
+                        <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        className={`w-full px-3 py-2.5 bg-slate-50 border-2 rounded-md text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B5ED7]/25 focus:border-[#0B5ED7] transition-all ${
+                          formErrors.city ? 'border-red-400' : 'border-slate-300'
+                        }`}
+                        placeholder="e.g. Bukoba"
+                        value={personalCity}
+                        onChange={(e) => {
+                          setPersonalCity(e.target.value);
+                          if (formErrors.city) setFormErrors(prev => ({ ...prev, city: '' }));
+                        }}
+                      />
+                      {formErrors.city && <p className="text-xs font-medium text-red-500 mt-1.5">{formErrors.city}</p>}
+                    </div>
+
+                    {/* Region */}
+                    <div className="flex flex-col">
+                      <label className="text-xs font-bold text-slate-800 uppercase tracking-widest mb-2 flex items-center space-x-1">
+                        <span>Region</span>
+                        <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        className={`w-full px-3 py-2.5 bg-slate-50 border-2 rounded-md text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B5ED7]/25 focus:border-[#0B5ED7] transition-all ${
+                          formErrors.region ? 'border-red-400' : 'border-slate-300'
+                        }`}
+                        placeholder="e.g. Kagera"
+                        value={personalRegion}
+                        onChange={(e) => {
+                          setPersonalRegion(e.target.value);
+                          if (formErrors.region) setFormErrors(prev => ({ ...prev, region: '' }));
+                        }}
+                      />
+                      {formErrors.region && <p className="text-xs font-medium text-red-500 mt-1.5">{formErrors.region}</p>}
+                    </div>
+                  </div>
+                </div>
+
+                {/* ─── SIGNATURE SECTION ────────────────────────── */}
+                <div className="border-t border-slate-100 pt-6">
                   <h3 className="text-xs font-extrabold text-slate-800 uppercase tracking-widest flex items-center space-x-2 mb-4">
                     <PenTool className="w-4 h-4 text-[#198754]" />
-                    <span>Letter Signature Placement (Optional)</span>
+                    <span>Letter Signature (Optional)</span>
                   </h3>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     
-                    <div className="bg-slate-50 border border-slate-205 rounded-lg p-5">
+                    {/* Signature Text */}
+                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-5">
                       <label className="text-xs font-bold text-slate-800 uppercase tracking-widest mb-1.5 block">
-                        Signature Text (Handwritten font replacement)
+                        Signature Text
                       </label>
                       <input
                         type="text"
-                        className="w-full px-3 py-2 bg-white border-2 border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0B5ED7]/25 focus:border-[#0B5ED7]"
+                        className="w-full px-3 py-2.5 bg-white border-2 border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#0B5ED7]/25 focus:border-[#0B5ED7]"
                         placeholder="e.g. J. Beda"
                         value={personalInfo.signatureText || ''}
                         onChange={(e) => {
@@ -1083,28 +1178,28 @@ export default function App() {
                         }}
                       />
                       {personalInfo.signatureText && (
-                        <div className="mt-3 bg-white p-3 rounded-md border border-slate-200 text-center flex flex-col items-center justify-center min-h-[70px]">
-                          <span className="text-[9px] text-slate-450 font-bold uppercase tracking-wider mb-1">Handdrawn Preview:</span>
-                          <span className="font-signature text-3xl text-blue-900 rotate-1 transform inline-block select-none py-1">
+                        <div className="mt-3 bg-white p-3 rounded-md border border-slate-200 text-center">
+                          <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Preview:</span>
+                          <span className="font-signature text-3xl text-blue-900 inline-block select-none">
                             {personalInfo.signatureText}
                           </span>
                         </div>
                       )}
                     </div>
 
-                    <div className="bg-slate-50 border border-slate-205 rounded-lg p-5 flex flex-col justify-between">
+                    {/* Upload Signature */}
+                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-5 flex flex-col justify-between">
                       <div>
                         <span className="text-xs font-bold text-slate-800 uppercase tracking-widest mb-1.5 block">
-                          Upload Custom Signature Scan
+                          Upload Signature Image
                         </span>
-
                         <div 
                           onDragEnter={handleSignatureDrag}
                           onDragOver={handleSignatureDrag}
                           onDragLeave={handleSignatureDrag}
                           onDrop={handleSignatureDrop}
                           onClick={() => fileInputRef.current?.click()}
-                          className={`border-2 border-dashed rounded-lg p-4 text-center transition-all cursor-pointer flex flex-col items-center justify-center ${
+                          className={`border-2 border-dashed rounded-lg p-4 text-center transition-all cursor-pointer ${
                             isDraggingFile 
                               ? 'border-[#0B5ED7] bg-blue-50' 
                               : 'border-slate-300 hover:border-slate-400 hover:bg-slate-100'
@@ -1117,9 +1212,9 @@ export default function App() {
                             className="hidden"
                             onChange={handSignatureFileChange}
                           />
-                          <Upload className="w-5 h-5 text-slate-450 mb-1.5" />
+                          <Upload className="w-5 h-5 text-slate-400 mx-auto mb-1.5" />
                           <p className="text-xs text-slate-500">
-                            Drag scan here or <span className="text-[#0B5ED7] font-semibold">browse files</span>
+                            Drag scan here or <span className="text-[#0B5ED7] font-semibold">browse</span>
                           </p>
                         </div>
                       </div>
@@ -1129,34 +1224,31 @@ export default function App() {
                           <div className="flex items-center space-x-2">
                             <img 
                               src={personalInfo.signatureImage} 
-                              alt="Signature upload" 
-                              className="h-9 max-w-[120px] object-contain border border-slate-100 p-0.5 rounded bg-slate-50"
+                              alt="Signature" 
+                              className="h-9 max-w-[120px] object-contain border border-slate-100 rounded"
                             />
                             <span className="text-[10px] font-bold text-green-700 flex items-center space-x-1">
                               <Check className="w-3 h-3 text-green-600" />
                               <span>Ready</span>
                             </span>
                           </div>
-                          
                           <button
                             onClick={clearSignatureImage}
                             className="bg-red-50 hover:bg-red-100 text-red-600 p-1.5 rounded transition-colors"
-                            title="Remove Signature"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       )}
                     </div>
-
                   </div>
                 </div>
 
+                {/* Next Button */}
                 <div className="flex justify-end border-t border-slate-150 pt-6 mt-8">
                   <button
                     onClick={handleNextStep}
                     className="flex items-center space-x-1.5 bg-[#0B5ED7] hover:bg-[#044dbd] text-white px-5 py-2.5 rounded-lg font-bold text-xs transition-all cursor-pointer"
-                    id="btn-goto-step1"
                   >
                     <span>Next: Professional Background</span>
                     <ChevronRight className="w-4 h-4" />
