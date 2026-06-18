@@ -68,12 +68,14 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       data.jobInfo.companyAddress || ''
     );
 
+    // Applicant block — ONLY address (no name, no phone/email)
+    // Name is shown at top right by the frontend. Phone/email appear at the bottom.
+    const applicantBlock = applicantAddress;
+
     // ─── BUILD THE EXACT LETTER TEMPLATE ───────────────
     const letterTemplate = isSwahili
       ? `<!-- SECTION_APPLICANT -->
-${fullName}
-${applicantAddress}
-${data.personalInfo.phone} | ${data.personalInfo.email}
+${applicantBlock}
 
 <!-- SECTION_DATE -->
 ${today}
@@ -93,9 +95,7 @@ Wako mwaminifu,
 <!-- SECTION_SIGNATURE -->
 ${fullName}`
       : `<!-- SECTION_APPLICANT -->
-${fullName}
-${applicantAddress}
-${data.personalInfo.phone} | ${data.personalInfo.email}
+${applicantBlock}
 
 <!-- SECTION_DATE -->
 ${today}
