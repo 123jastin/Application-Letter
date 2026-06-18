@@ -257,8 +257,8 @@ export default function App() {
   const [personalRegion, setPersonalRegion] = useState<string>('');
 
   const [professionalInfo, setProfessionalInfo] = useState<ProfessionalInfo>({
-    highestEducation: 'Bachelor\'s Degree',
-    yearsOfExperience: '3',
+    highestEducation: '', // Empty by default
+    yearsOfExperience: '0', // 0 by default
     keySkills: '',
     currentPosition: 'Jobseeker'
   });
@@ -676,7 +676,7 @@ export default function App() {
     try {
       // Build full address from structured fields
       const fullPersonalAddress = [
-        `P.O. Box ${personalPOBox}`,
+        personalPOBox ? `P.O. Box ${personalPOBox}` : '',
         personalCity,
         personalRegion,
       ].filter(Boolean).join(', ');
@@ -1342,7 +1342,7 @@ export default function App() {
                     <input
                       type="text"
                       className="w-full px-3 py-2.5 bg-slate-50 border-2 border-slate-300 rounded-md text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B5ED7]/25 focus:border-[#0B5ED7] transition-all"
-                      placeholder="e.g. Bachelor of Education with Special Needs"
+                      placeholder="e.g. Bachelor of Education with Special Needs — leave blank if not needed"
                       value={professionalInfo.highestEducation}
                       onChange={(e) => setProfessionalInfo({ ...professionalInfo, highestEducation: e.target.value })}
                     />
@@ -2368,11 +2368,29 @@ export default function App() {
                               <h1 className="font-sans font-bold text-[15px] text-slate-950 leading-snug">
                                 {personalInfo.fullName}
                               </h1>
-                              {formatAddressLines(personalInfo.address).map((line, idx) => (
-                                <p key={idx} className="font-normal text-slate-800 text-[13px]">
-                                  {line}
-                                </p>
-                              ))}
+                              {/* Show address from parsed applicant section */}
+                              {parsed.applicant && stripMarkdownAndHtml(parsed.applicant).trim().length > 0 ? (
+                                stripMarkdownAndHtml(parsed.applicant).split('\n').map((line, idx) => {
+                                  const trimmed = line.trim();
+                                  if (!trimmed) return null;
+                                  // Skip the name line (already displayed above)
+                                  if (trimmed.toLowerCase() === personalInfo.fullName.toLowerCase()) return null;
+                                  // Skip phone/email lines
+                                  if (trimmed.includes('@') || trimmed.includes('|') || /\+\d{1,3}\s?\d{3}\s?\d{3}\s?\d{3}/.test(trimmed)) return null;
+                                  return (
+                                    <p key={idx} className="font-normal text-slate-800 text-[13px]">
+                                      {trimmed}
+                                    </p>
+                                  );
+                                })
+                              ) : (
+                                // Fallback to structured address if parsed applicant is empty
+                                formatAddressLines(personalInfo.address).map((line, idx) => (
+                                  <p key={idx} className="font-normal text-slate-800 text-[13px]">
+                                    {line}
+                                  </p>
+                                ))
+                              )}
                               <p className="font-normal text-slate-800 text-[13px] pt-2">
                                 {stripMarkdownAndHtml(parsed.date) || new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
                               </p>
