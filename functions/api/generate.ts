@@ -68,16 +68,12 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       data.jobInfo.companyAddress || ''
     );
 
-    // Applicant block — ONLY address (no name, no phone/email)
-    // Name is shown at top right by the frontend. Phone/email appear at the bottom.
-    const applicantBlock = applicantAddress;
-
     // ─── BUILD THE EXACT LETTER TEMPLATE ───────────────
+    // Name + Address rendered by frontend at top right
+    // Date rendered by frontend at top right below address
+    // Employer rendered by frontend at left
     const letterTemplate = isSwahili
-      ? `<!-- SECTION_APPLICANT -->
-${applicantBlock}
-
-<!-- SECTION_DATE -->
+      ? `<!-- SECTION_DATE -->
 ${today}
 
 <!-- SECTION_EMPLOYER -->
@@ -94,10 +90,7 @@ Wako mwaminifu,
 
 <!-- SECTION_SIGNATURE -->
 ${fullName}`
-      : `<!-- SECTION_APPLICANT -->
-${applicantBlock}
-
-<!-- SECTION_DATE -->
+      : `<!-- SECTION_DATE -->
 ${today}
 
 <!-- SECTION_EMPLOYER -->
@@ -186,7 +179,7 @@ TAARIFA ZA MWOMBAJI (TUMIA HIZI TU):
 Jina: ${fullName}
 Simu: ${data.personalInfo.phone}
 Barua Pepe: ${data.personalInfo.email}
-Anwani: ${data.personalInfo.address}
+Anwani: ${applicantAddress}
 Elimu: ${data.professionalInfo.highestEducation || 'Haijatajwa'}
 Uzoefu: Miaka ${data.professionalInfo.yearsOfExperience}
 Nafasi ya Sasa: ${data.professionalInfo.currentPosition}
@@ -212,6 +205,9 @@ Rudisha template YOTE mara MOJA.`
 
 APPLICANT INFO:
 Name: ${fullName}
+Address: ${applicantAddress}
+Phone: ${data.personalInfo.phone}
+Email: ${data.personalInfo.email}
 Education: ${data.professionalInfo.highestEducation}
 Experience: ${data.professionalInfo.yearsOfExperience} years as ${data.professionalInfo.currentPosition}
 Skills: ${data.professionalInfo.keySkills || 'Professional skills'}
@@ -240,7 +236,8 @@ Replace [WRITE BODY HERE] with 3 short paragraphs. Return the COMPLETE template.
 
     let applicationLetter = appResult.choices[0]?.message?.content || '';
 
-    const marker = '<!-- SECTION_APPLICANT -->';
+    // Remove duplicate if AI returns letter twice
+    const marker = '<!-- SECTION_DATE -->';
     const first = applicationLetter.indexOf(marker);
     const second = applicationLetter.indexOf(marker, first + 1);
     if (second !== -1) {
@@ -309,6 +306,7 @@ Replace [WRITE COVER LETTER BODY HERE]. Return COMPLETE template.`;
 
     let coverLetter = coverResult.choices[0]?.message?.content || '';
 
+    // Remove duplicate cover letter
     const coverMarker = '<!-- SECTION_BODY -->';
     const coverFirst = coverLetter.indexOf(coverMarker);
     const coverSecond = coverLetter.indexOf(coverMarker, coverFirst + 1);
