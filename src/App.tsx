@@ -315,6 +315,10 @@ export default function App() {
   const [isDraggingFile, setIsDraggingFile] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Payment states
+  const [paymentStatus, setPaymentStatus] = useState<'pending' | 'paid' | 'failed' | null>(null);
+  const [paymentRef, setPaymentRef] = useState<string>('');
+
   // Keep personalInfo.address in sync with structured fields
   useEffect(() => {
     const fullAddress = [
@@ -396,6 +400,36 @@ export default function App() {
           fetchLetterHistory(data.personalInfo.email);
         }
       } catch (e) {}
+    }
+  }, []);
+
+  // Check for payment return on page load
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    if (urlParams.get('payment') === 'success') {
+      const pendingPayment = localStorage.getItem('jr_pending_payment');
+      if (pendingPayment === 'true') {
+        localStorage.removeItem('jr_pending_payment');
+        setPaymentStatus('paid');
+        setPaymentRef(urlParams.get('ref') || '');
+        window.history.replaceState({}, '', window.location.pathname);
+        
+        // Auto-generate after successful payment
+        setTimeout(() => {
+          handleGenerateLetters();
+        }, 500);
+      }
+    } else if (urlParams.get('payment') === 'failed') {
+      setPaymentStatus('failed');
+      localStorage.removeItem('jr_pending_payment');
+      window.history.replaceState({}, '', window.location.pathname);
+      toastError('Payment was not completed. Please try again.');
+    } else if (urlParams.get('payment') === 'error') {
+      setPaymentStatus('failed');
+      localStorage.removeItem('jr_pending_payment');
+      window.history.replaceState({}, '', window.location.pathname);
+      toastError('Payment error occurred. Please try again.');
     }
   }, []);
 
@@ -662,6 +696,64 @@ export default function App() {
     }
   };
 
+  const handlePaymentAndGenerate = async () => {
+    if (!validateStep(0) || !validateStep(2)) {
+      setActiveStep(0);
+      return;
+    }
+
+    // Check if returning from successful payment
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('payment') === 'success') {
+      setPaymentStatus('paid');
+      setPaymentRef(urlParams.get('ref') || '');
+      window.history.replaceState({}, '', window.location.pathname);
+      handleGenerateLetters();
+      return;
+    }
+
+    // Determine price
+    const isTanzania = targetCountry === 'Tanzania';
+    const amount = isTanzania ? 1000 : 0.5;
+    const currency = isTanzania ? 'TZS' : 'USD';
+    const description = `Application Letter - ${jobInfo.jobTitle} at ${jobInfo.companyName}`;
+
+    setIsGenerating(true);
+    setGeneratorStages('Redirecting to secure payment...');
+
+    try {
+      const response = await fetch('/api/pesapal-submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount,
+          currency,
+          description,
+          email: personalInfo.email,
+          phone: personalInfo.phone,
+          country: targetCountry,
+        }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.details || 'Payment initiation failed');
+      }
+
+      const data = await response.json();
+      
+      // Save state before redirect
+      localStorage.setItem('jr_pending_payment', 'true');
+      
+      // Redirect to PesaPal
+      window.location.href = data.redirect_url;
+
+    } catch (err: any) {
+      setIsGenerating(false);
+      toastError('Payment Error: ' + err.message);
+    }
+  };
+
   const handleGenerateLetters = async () => {
     if (!validateStep(0) || !validateStep(2)) {
       setActiveStep(0);
@@ -696,38 +788,33 @@ export default function App() {
       ) ? '' : professionalInfo.highestEducation;
 
       // Build company address from structured fields
-   
-     // Build company address from structured fields
-const structuredCompanyAddress = [
-  companyPOBox ? `P.O. Box ${companyPOBox}` : '',
-  companyDistrict,
-  companyRegion,
-  companyCountry,
-].filter(Boolean).join(', ');
+      const structuredCompanyAddress = [
+        companyPOBox ? `P.O. Box ${companyPOBox}` : '',
+        companyDistrict,
+        companyRegion,
+        companyCountry,
+      ].filter(Boolean).join(', ');
 
-// Use structured address if available, otherwise fallback to jobInfo.companyAddress
-const finalCompanyAddress = structuredCompanyAddress || jobInfo.companyAddress;
+      // Use structured address if available, otherwise fallback to jobInfo.companyAddress
+      const finalCompanyAddress = structuredCompanyAddress || jobInfo.companyAddress;
 
-const response = await fetch('/api/generate', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    personalInfo,
-    professionalInfo: {
-      ...professionalInfo,
-      highestEducation: educationToShow,
-    },
-    jobInfo: {
-      ...jobInfo,
-      companyAddress: finalCompanyAddress,
-    },
-    targetCountry,
-    targetLanguage
-  })
-}); 
-    
-  
-  
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          personalInfo,
+          professionalInfo: {
+            ...professionalInfo,
+            highestEducation: educationToShow,
+          },
+          jobInfo: {
+            ...jobInfo,
+            companyAddress: finalCompanyAddress,
+          },
+          targetCountry,
+          targetLanguage
+        })
+      });
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -1868,22 +1955,142 @@ const response = await fetch('/api/generate', {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between border-t border-slate-150 pt-6 mt-8">
-                  <button
-                    onClick={handlePrevStep}
-                    className="px-4 py-2 border border-slate-200 rounded-lg text-xs font-semibold hover:bg-slate-100 transition-colors cursor-pointer"
-                  >
-                    Back
-                  </button>
+                {/* ─── PAYMENT CARD ──────────────────────────────── */}
+                <div className="border-t border-slate-150 pt-6 mt-6">
+                  
+                  <div className="bg-gradient-to-br from-[#0B5ED7]/5 to-blue-50 border border-[#0B5ED7]/20 rounded-2xl p-6 mb-6">
+                    
+                    {/* Header with Price */}
+                    <div className="flex items-center justify-between mb-5">
+                      <div className="flex items-center space-x-2.5">
+                        <div className="w-10 h-10 bg-[#0B5ED7] rounded-xl flex items-center justify-center">
+                          <Lock className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-sm text-slate-800">Secure Payment</h3>
+                          <p className="text-[10px] text-slate-500 uppercase tracking-wider">Powered by PesaPal</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="bg-[#0B5ED7] text-white px-4 py-2 rounded-xl">
+                          <span className="text-xl font-extrabold">
+                            {targetCountry === 'Tanzania' ? 'TZS 1,000' : '$0.50'}
+                          </span>
+                          <span className="text-[9px] block opacity-80 font-medium">per letter</span>
+                        </div>
+                      </div>
+                    </div>
 
-                  <button
-                    onClick={handleGenerateLetters}
-                    className="flex items-center space-x-2 bg-[#0B5ED7] hover:bg-[#044dbd] text-white px-6 py-2.5 rounded-lg font-bold text-xs transition-all cursor-pointer"
-                    id="btn-trigger-ai-run"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-yellow-300" />
-                    <span>Generate Tailored Letters</span>
-                  </button>
+                    {/* What You Get */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+                      <div className="bg-white/80 rounded-xl p-3 flex items-center space-x-2.5">
+                        <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <FileText className="w-4 h-4 text-emerald-600" />
+                        </div>
+                        <div>
+                          <p className="text-[11px] font-bold text-slate-800">Application Letter</p>
+                          <p className="text-[9px] text-slate-500">Professional format</p>
+                        </div>
+                      </div>
+                      <div className="bg-white/80 rounded-xl p-3 flex items-center space-x-2.5">
+                        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <Briefcase className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="text-[11px] font-bold text-slate-800">Cover Letter</p>
+                          <p className="text-[9px] text-slate-500">Companion included</p>
+                        </div>
+                      </div>
+                      <div className="bg-white/80 rounded-xl p-3 flex items-center space-x-2.5">
+                        <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <TrendingUp className="w-4 h-4 text-amber-600" />
+                        </div>
+                        <div>
+                          <p className="text-[11px] font-bold text-slate-800">ATS Analysis</p>
+                          <p className="text-[9px] text-slate-500">Score + tips</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Payment Methods */}
+                    <div className="bg-white/60 rounded-xl p-4 mb-5">
+                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3 text-center">
+                        Pay with Mobile Money
+                      </p>
+                      <div className="flex items-center justify-center gap-4 flex-wrap">
+                        <div className="flex items-center space-x-1.5 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+                          <span className="text-lg">📱</span>
+                          <span className="text-[11px] font-bold text-emerald-800">M-Pesa</span>
+                        </div>
+                        <div className="flex items-center space-x-1.5 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+                          <span className="text-lg">📱</span>
+                          <span className="text-[11px] font-bold text-blue-800">Airtel Money</span>
+                        </div>
+                        <div className="flex items-center space-x-1.5 bg-purple-50 border border-purple-200 rounded-lg px-3 py-2">
+                          <span className="text-lg">📱</span>
+                          <span className="text-[11px] font-bold text-purple-800">Tigo Pesa</span>
+                        </div>
+                        <div className="flex items-center space-x-1.5 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+                          <span className="text-lg">💳</span>
+                          <span className="text-[11px] font-bold text-slate-700">Card</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Security */}
+                    <div className="flex items-center justify-center space-x-1.5 mb-5">
+                      <Lock className="w-3 h-3 text-emerald-600" />
+                      <span className="text-[10px] text-slate-500 font-medium">
+                        Secured by PesaPal • Your payment info is encrypted
+                      </span>
+                    </div>
+
+                    {/* Pay Button */}
+                    <button
+                      onClick={handlePaymentAndGenerate}
+                      disabled={isGenerating}
+                      className="w-full flex items-center justify-center space-x-2 bg-[#0B5ED7] hover:bg-[#044dbd] disabled:bg-slate-400 text-white px-6 py-3.5 rounded-xl font-bold text-sm transition-all cursor-pointer shadow-lg shadow-blue-200"
+                    >
+                      {isGenerating ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Redirecting to PesaPal...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Lock className="w-4 h-4" />
+                          <span>Pay {targetCountry === 'Tanzania' ? 'TZS 1,000' : '$0.50'} & Generate Letter</span>
+                        </>
+                      )}
+                    </button>
+
+                    {/* Trust Badges */}
+                    <div className="flex items-center justify-center space-x-4 mt-4">
+                      <div className="flex items-center space-x-1">
+                        <Check className="w-3 h-3 text-emerald-500" />
+                        <span className="text-[9px] text-slate-400">Instant delivery</span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <Check className="w-3 h-3 text-emerald-500" />
+                        <span className="text-[9px] text-slate-400">Download PDF</span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <Check className="w-3 h-3 text-emerald-500" />
+                        <span className="text-[9px] text-slate-400">Edit anytime</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Navigation */}
+                  <div className="flex items-center justify-between">
+                    <button
+                      onClick={handlePrevStep}
+                      className="px-4 py-2.5 border border-slate-200 rounded-lg text-xs font-semibold hover:bg-slate-100 transition-colors cursor-pointer"
+                    >
+                      Back
+                    </button>
+                    <div></div>
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -2659,7 +2866,7 @@ const response = await fetch('/api/generate', {
                 JobsReport Document Studio
               </h3>
               <p className="text-slate-400 text-[10px] font-bold tracking-widest uppercase mb-6 flex items-center justify-center space-x-1">
-                <span>Model: Gemini 2.5 Flash</span>
+                <span>Model: {paymentStatus === 'paid' ? 'Generating your letter...' : 'Gemini 2.5 Flash'}</span>
               </p>
 
               <div className="min-h-[44px] px-4 py-3 rounded bg-slate-50 border border-slate-200 text-slate-600 text-xs flex items-center justify-center space-x-2 leading-relaxed">
