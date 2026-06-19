@@ -696,63 +696,58 @@ export default function App() {
     }
   };
 
-  const handlePaymentAndGenerate = async () => {
-    if (!validateStep(0) || !validateStep(2)) {
-      setActiveStep(0);
-      return;
-    }
 
-    // Check if returning from successful payment
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('payment') === 'success') {
-      setPaymentStatus('paid');
-      setPaymentRef(urlParams.get('ref') || '');
-      window.history.replaceState({}, '', window.location.pathname);
-      handleGenerateLetters();
-      return;
-    }
+const handlePaymentAndGenerate = async () => {
+  if (!validateStep(0) || !validateStep(2)) {
+    setActiveStep(0);
+    return;
+  }
 
-    // Determine price
+  setIsGenerating(true);
+  setGeneratorStages('Redirecting to PesaPal...');
+
+  try {
     const isTanzania = targetCountry === 'Tanzania';
     const amount = isTanzania ? 1000 : 0.5;
     const currency = isTanzania ? 'TZS' : 'USD';
-    const description = `Application Letter - ${jobInfo.jobTitle} at ${jobInfo.companyName}`;
 
-    setIsGenerating(true);
-    setGeneratorStages('Redirecting to secure payment...');
+    const response = await fetch('/api/pesapal-submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        amount: amount,
+        currency: currency,
+        phone: personalInfo.phone || '255000000000',
+        email: personalInfo.email || 'test@test.com',
+        description: 'Letter Generation',
+      }),
+    });
 
-    try {
-      const response = await fetch('/api/pesapal-submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount,
-          currency,
-          description,
-          email: personalInfo.email,
-          phone: personalInfo.phone,
-          country: targetCountry,
-        }),
-      });
+    const result = await response.json();
 
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.details || 'Payment initiation failed');
-      }
-
-      const data = await response.json();
-      
-      // Save state before redirect
-      localStorage.setItem('jr_pending_payment', 'true');
-      
-      // Redirect to PesaPal
-      window.location.href = data.redirect_url;
-
-    } catch (err: any) {
+    if (!response.ok) {
+      alert('Error: ' + (result.error || 'Unknown'));
       setIsGenerating(false);
-      toastError('Payment Error: ' + err.message);
+      return;
     }
-  };
+
+    // Redirect to PesaPal
+    if (result.redirect_url) {
+      window.location.href = result.redirect_url;
+    } else {
+      alert('No redirect URL received');
+      setIsGenerating(false);
+    }
+
+  } catch (err: any) {
+    alert('Failed: ' + err.message);
+    setIsGenerating(false);
+  }
+};
+
+
+
+
 
   const handleGenerateLetters = async () => {
     if (!validateStep(0) || !validateStep(2)) {
