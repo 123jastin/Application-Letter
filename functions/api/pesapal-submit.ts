@@ -1,4 +1,3 @@
-
 export const onRequestPost = async (context: any) => {
   try {
     const data = await context.request.json();
@@ -11,17 +10,6 @@ export const onRequestPost = async (context: any) => {
 
     const merchantRef = `JR-${Date.now()}`;
     const callbackUrl = `https://coverletter.jobsreport.online/api/pesapal-callback`;
-
-    // OAuth parameters
-    const oauthParams: Record<string, string> = {
-      oauth_consumer_key: PESAPAL_CONSUMER_KEY,
-      oauth_signature_method: 'HMAC-SHA1',
-      oauth_signature: PESAPAL_CONSUMER_SECRET + '&',
-      oauth_timestamp: Math.floor(Date.now() / 1000).toString(),
-      oauth_nonce: Math.random().toString(36).substring(2, 15),
-      oauth_version: '1.0',
-      oauth_callback: callbackUrl,
-    };
 
     // Build XML
     const xml = `<?xml version="1.0" encoding="utf-8"?>
@@ -39,19 +27,65 @@ export const onRequestPost = async (context: any) => {
   Currency="${currency}"
   xmlns="http://www.pesapal.com" />`;
 
-    // Build URL with OAuth params
+    // OAuth 1.0 parameters
+    const oauthCallback = callbackUrl;
+    const oauthConsumerKey = PESAPAL_CONSUMER_KEY;
+    const oauthSignatureMethod = 'HMAC-SHA1';
+    const oauthTimestamp = Math.floor(Date.now() / 1000).toString();
+    const oauthNonce = Math.random().toString(36).substring(2, 15) + Date.now();
+    const oauthVersion = '1.0';
+
+    // Build signature base string
+    const httpMethod = 'GET';
     const baseUrl = 'https://www.pesapal.com/api/PostPesapalDirectOrderV4';
-    const oauthString = Object.entries(oauthParams)
-      .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+
+    // Collect all parameters for signature
+    const allParams: Record<string, string> = {
+      oauth_callback: oauthCallback,
+      oauth_consumer_key: oauthConsumerKey,
+      oauth_nonce: oauthNonce,
+      oauth_signature_method: oauthSignatureMethod,
+      oauth_timestamp: oauthTimestamp,
+      oauth_version: oauthVersion,
+      pesapal_request_data: xml,
+    };
+
+    // Sort and encode for signature
+    const sortedParams = Object.keys(allParams)
+      .sort()
+      .map(k => `${encodeURIComponent(k)}=${encodeURIComponent(allParams[k])}`)
       .join('&');
 
-    const fullUrl = `${baseUrl}?${oauthString}&pesapal_request_data=${encodeURIComponent(xml)}`;
+    const signatureBaseString = `${httpMethod}&${encodeURIComponent(baseUrl)}&${encodeURIComponent(sortedParams)}`;
+    const signingKey = `${encodeURIComponent(PESAPAL_CONSUMER_SECRET)}&`;
+
+    // Create HMAC-SHA1 signature
+    const encoder = new TextEncoder();
+    const key = encoder.encode(signingKey);
+    const message = encoder.encode(signatureBaseString);
+    
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw', key, { name: 'HMAC', hash: 'SHA-1' }, false, ['sign']
+    );
+    const signature = await crypto.subtle.sign('HMAC', cryptoKey, message);
+    const base64Signature = btoa(String.fromCharCode(...new Uint8Array(signature)));
+
+    // Build final URL with all OAuth params
+    const urlParams = new URLSearchParams();
+    urlParams.append('oauth_callback', oauthCallback);
+    urlParams.append('oauth_consumer_key', oauthConsumerKey);
+    urlParams.append('oauth_nonce', oauthNonce);
+    urlParams.append('oauth_signature_method', oauthSignatureMethod);
+    urlParams.append('oauth_timestamp', oauthTimestamp);
+    urlParams.append('oauth_version', oauthVersion);
+    urlParams.append('oauth_signature', base64Signature);
+    urlParams.append('pesapal_request_data', xml);
+
+    const fullUrl = `${baseUrl}?${urlParams.toString()}`;
 
     const response = await fetch(fullUrl, {
       method: 'GET',
-      headers: {
-        'Accept': 'text/plain',
-      },
+      headers: { 'Accept': 'text/plain' },
     });
 
     const responseText = await response.text();
