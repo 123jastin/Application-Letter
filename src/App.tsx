@@ -2036,7 +2036,26 @@ export default function App() {
                         </div>
                       </div>
                     </div>
-
+                    
+{/* Phone Number for Payment */}
+<div className="bg-white/60 rounded-xl p-4 mb-4">
+  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+    Phone Number for Payment
+  </label>
+  <input
+    type="tel"
+    className="w-full px-4 py-3 bg-white border-2 border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0B5ED7]/25 focus:border-[#0B5ED7] transition-all"
+    placeholder="e.g. 255712345678"
+    value={personalInfo.phone}
+    onChange={(e) => {
+      const updated = { ...personalInfo, phone: e.target.value };
+      savePersonalInfoLocally(updated);
+    }}
+  />
+  <p className="text-[9px] text-slate-400 mt-1.5">
+    You'll receive a USSD push notification to enter your PIN
+  </p>
+</div>
                     {/* Security */}
                     <div className="flex items-center justify-center space-x-1.5 mb-5">
                       <Lock className="w-3 h-3 text-emerald-600" />
@@ -2044,6 +2063,7 @@ export default function App() {
                         Secured by PesaPal • Your payment info is encrypted
                       </span>
                     </div>
+                    
 
                     {/* Pay Button */}
                     <button
