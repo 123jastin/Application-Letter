@@ -22,10 +22,20 @@ function getRegionalStandard(country: string): string {
   return 'European Corporate';
 }
 
-function formatCompanyAddress(name: string, address: string): string {
-  if (!address) return name;
-  const parts = address.split(',').map(p => p.trim()).filter(Boolean);
-  return [name, ...parts].join('\n');
+function formatAddressLines(address: string): string {
+  if (!address) return '';
+  let cleaned = address.trim();
+  cleaned = cleaned.replace(/(P\.?[oO]\.?\s*Box\s*\d+)\s+([A-Z])/, '$1\n$2');
+  const parts = cleaned.split(/[,\n]/).map(p => p.trim()).filter(Boolean);
+  return parts.join('\n');
+}
+
+function formatCompanyBlock(companyName: string, companyAddress: string): string {
+  if (!companyAddress) return companyName;
+  let address = companyAddress.trim();
+  address = address.replace(/(P\.?[oO]\.?\s*Box\s*\d+)\s+([A-Z])/, '$1\n$2');
+  const parts = address.split(/[,\n]/).map(p => p.trim()).filter(Boolean);
+  return [companyName, ...parts].join('\n');
 }
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
@@ -51,27 +61,45 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     const isSwahili = data.targetLanguage === 'Swahili';
     const MODEL = isSwahili ? 'llama-3.3-70b-versatile' : 'llama-3.1-8b-instant';
 
+    const applicantAddress = formatAddressLines(data.personalInfo?.address || '');
     const companyName = data.jobInfo?.companyName || '';
     const companyAddress = data.jobInfo?.companyAddress || '';
+    const employerBlock = formatCompanyBlock(companyName, companyAddress);
     const jobTitle = data.jobInfo?.jobTitle || '';
     const jobDescription = data.jobInfo?.jobDescription || '';
     const education = data.professionalInfo?.highestEducation || '';
     const experience = data.professionalInfo?.yearsOfExperience || '0';
     const skills = data.professionalInfo?.keySkills || '';
 
-    // Format employer block with each part on separate line
-    const employerBlock = formatCompanyAddress(companyName, companyAddress);
+    // ─── BUILD THE EXACT LETTER TEMPLATE ───────────────
+    const letterTemplate = isSwahili
+      ? `<!-- SECTION_APPLICANT -->
+${fullName}
+${applicantAddress}
+${data.personalInfo?.phone || ''} | ${data.personalInfo?.email || ''}
 
-    // ─── English Template ──────────────────────────────
-    if (!isSwahili) {
-      const prompt = `Write a job application letter. Fill in the body only.
+<!-- SECTION_DATE -->
+${today}
 
-APPLICANT: ${fullName} | ${education} | ${experience} years | ${skills}
-JOB: ${jobTitle} at ${companyName} | ${jobDescription}
-COUNTRY: ${data.targetCountry}
-DATE: ${today}
+<!-- SECTION_EMPLOYER -->
+${employerBlock}
 
-TEMPLATE:
+<!-- SECTION_SUBJECT -->
+YAH: MAOMBI YA NAFASI YA ${jobTitle.toUpperCase()}
+
+<!-- SECTION_BODY -->
+[ANDIKA MWILI WA BARUA HAPA]
+
+<!-- SECTION_CLOSING -->
+Wako mwaminifu,
+
+<!-- SECTION_SIGNATURE -->
+${fullName}`
+      : `<!-- SECTION_APPLICANT -->
+${fullName}
+${applicantAddress}
+${data.personalInfo?.phone || ''} | ${data.personalInfo?.email || ''}
+
 <!-- SECTION_DATE -->
 ${today}
 
@@ -85,218 +113,166 @@ REF: APPLICATION FOR ${jobTitle.toUpperCase()}
 Dear Hiring Manager,
 
 <!-- SECTION_BODY -->
-[Write 3 short paragraphs here]
+[WRITE BODY HERE]
 
 <!-- SECTION_CLOSING -->
 Yours sincerely,
 
 <!-- SECTION_SIGNATURE -->
-${fullName}
+${fullName}`;
 
-RULES: Fill body only. Return complete template. No name in closing. No phone/email in signature.`;
+    // ─── Step 1: Generate Application Letter ───────────
+    const appSystemPrompt = isSwahili
+      ? `Wewe ni mtaalamu wa kuandika barua za maombi ya kazi Tanzania. Jaza MWILI tu wa template. Rudisha template YOTE.
 
-      const result = await groq.chat.completions.create({
-        model: 'llama-3.1-8b-instant',
-        messages: [
-          { role: 'system', content: 'You are a professional HR consultant. Fill in only the body section of a letter template.' },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.7,
-        max_tokens: 1536,
-      });
+SHERIA:
+1. Anza kwa "Tafadhali rejea somo tajwa la barua hapo juu"
+2. Andika aya 4-5 kwa Kiswahili sanifu
+3. USITUMIE: shauku, furahi, hamasa, Ninafurahishwa, ninajua kwamba
+4. USIRUDIE: kufanya kazi (max mara 2), kufikia malengo (max mara 1)
+5. TUMIA: Ninafuraha, Nina uwezo, Kupitia uzoefu, Nitaweza kuchangia, nimeambatanisha vivuli vya vyeti
+6. Malizia kwa sentensi moja tu ya matarajio
+7. USIVUMBUE: umri, elimu, chuo, mwaka isipokuwa vimetajwa
+8. Usirudie template mara mbili`
+      : `You fill in ONLY the <!-- SECTION_BODY --> of a job application letter template.
 
-      let applicationLetter = result.choices[0]?.message?.content || '';
+RULES:
+1. Output the ENTIRE template with the body filled in
+2. Do NOT add phone, email, or address in the signature section
+3. Do NOT write the name after the closing
+4. Keep the body to 3 short paragraphs (200 words max)
+5. Do NOT repeat the entire letter twice`;
 
-      // Remove duplicate if exists
-      const marker = '<!-- SECTION_DATE -->';
-      const first = applicationLetter.indexOf(marker);
-      const second = applicationLetter.indexOf(marker, first + 1);
-      if (second !== -1) {
-        applicationLetter = applicationLetter.substring(0, second).trim();
-      }
-
-      // Generate cover letter
-      const coverPrompt = `Write a short cover letter.
-
-APPLICANT: ${fullName} | ${education} | ${experience} years | ${skills}
-TARGET: ${jobTitle} at ${companyName}
-JOB: ${jobDescription.substring(0, 300)}
-COUNTRY: ${data.targetCountry}
-
-TEMPLATE:
-<!-- SECTION_BODY -->
-[Write 2 short paragraphs]
-
-<!-- SECTION_CLOSING -->
-Yours sincerely,
-
-<!-- SECTION_SIGNATURE -->
-${fullName}
-
-Return COMPLETE template.`;
-
-      const coverResult = await groq.chat.completions.create({
-        model: 'llama-3.1-8b-instant',
-        messages: [
-          { role: 'system', content: 'Fill in only the body. Return complete template.' },
-          { role: 'user', content: coverPrompt }
-        ],
-        temperature: 0.7,
-        max_tokens: 1024,
-      });
-
-      let coverLetter = coverResult.choices[0]?.message?.content || '';
-
-      const coverMarker = '<!-- SECTION_BODY -->';
-      const coverFirst = coverLetter.indexOf(coverMarker);
-      const coverSecond = coverLetter.indexOf(coverMarker, coverFirst + 1);
-      if (coverSecond !== -1) {
-        coverLetter = coverLetter.substring(0, coverSecond).trim();
-      }
-
-      // ATS Analysis
-      const atsResult = await groq.chat.completions.create({
-        model: 'llama-3.1-8b-instant',
-        messages: [
-          { role: 'system', content: 'Return ONLY a JSON object.' },
-          { role: 'user', content: `{"matchScore":75,"matchingSkills":["skill1"],"missingSkills":[],"recommendations":["tip1"],"cvImprovements":["cv1"]}\n\nAnalyze: ${jobTitle} | ${skills}` }
-        ],
-        temperature: 0.3,
-        max_tokens: 512,
-      });
-
-      let atsAnalysis = { matchScore: 70, matchingSkills: [] as string[], missingSkills: [] as string[], recommendations: [] as string[], cvImprovements: [] as string[] };
-      try {
-        const atsText = atsResult.choices[0]?.message?.content || '{}';
-        const clean = atsText.replace(/```json|```/g, '').trim();
-        const parsed = JSON.parse(clean);
-        if (parsed && typeof parsed.matchScore === 'number') atsAnalysis = parsed;
-      } catch (e) {}
-
-      return new Response(JSON.stringify({
-        id: `letter-${Date.now()}`,
-        createdAt: new Date().toISOString(),
-        applicationLetter,
-        coverLetter,
-        atsAnalysis,
-        employerCountry: data.targetCountry || 'Tanzania',
-        regionalStandard: getRegionalStandard(data.targetCountry || 'Tanzania'),
-      }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-      });
-    }
-
-    // ─── Swahili Template ──────────────────────────────
-    const swahiliPrompt = `Andika barua ya maombi ya kazi kwa Kiswahili sanifu cha Tanzania.
+    const appUserPrompt = isSwahili
+      ? `Jaza MWILI wa template hii kwa Kiswahili sanifu. Rudisha template YOTE.
 
 MWOMBAJI: ${fullName} | ${education || 'Haijatajwa'} | Miaka ${experience} | ${skills || 'Haijatajwa'}
 KAZI: ${jobTitle} katika ${companyName} | ${jobDescription}
 NCHI: ${data.targetCountry}
-TAREHE: ${today}
 
 TEMPLATE:
-<!-- SECTION_DATE -->
-${today}
+${letterTemplate}
 
-<!-- SECTION_EMPLOYER -->
-${employerBlock}
+Badilisha [ANDIKA MWILI WA BARUA HAPA] na aya 4-5. Rudisha YOTE mara MOJA.`
+      : `Fill in the SECTION_BODY of this letter template. Return the COMPLETE template.
 
-<!-- SECTION_SUBJECT -->
-YAH: MAOMBI YA NAFASI YA ${jobTitle.toUpperCase()}
+APPLICANT: ${fullName} | ${education} | ${experience} years | ${skills}
+JOB: ${jobTitle} at ${companyName} | ${jobDescription}
+COUNTRY: ${data.targetCountry}
 
-<!-- SECTION_BODY -->
-[Andika mwili wa barua hapa kwa Kiswahili]
+TEMPLATE:
+${letterTemplate}
+
+Replace [WRITE BODY HERE] with 3 short paragraphs. Return COMPLETE template.`;
+
+    const appResult = await groq.chat.completions.create({
+      model: MODEL,
+      messages: [
+        { role: 'system', content: appSystemPrompt },
+        { role: 'user', content: appUserPrompt }
+      ],
+      temperature: isSwahili ? 0.3 : 0.7,
+      max_tokens: isSwahili ? 2048 : 1536,
+    });
+
+    let applicationLetter = appResult.choices[0]?.message?.content || '';
+
+    // Remove duplicate
+    const marker = '<!-- SECTION_APPLICANT -->';
+    const first = applicationLetter.indexOf(marker);
+    const second = applicationLetter.indexOf(marker, first + 1);
+    if (second !== -1) {
+      applicationLetter = applicationLetter.substring(0, second).trim();
+    }
+
+    // ─── Step 2: Generate Cover Letter ─────────────────
+    const coverTemplate = isSwahili
+      ? `<!-- SECTION_BODY -->
+[ANDIKA MWILI WA BARUA YA KUAMBATANA HAPA]
 
 <!-- SECTION_CLOSING -->
 Wako mwaminifu,
 
 <!-- SECTION_SIGNATURE -->
-${fullName}
+${fullName}`
+      : `<!-- SECTION_BODY -->
+[WRITE COVER LETTER BODY HERE]
 
-SHERIA ZA KUANDIKA:
-1. Jaza mwili tu, rudisha template yote
-2. Anza kwa "Tafadhali rejea somo tajwa la barua hapo juu"
-3. Andika aya 4-5 kwa Kiswahili sanifu
-4. USITUMIE: shauku, furahi, hamasa, Ninafurahishwa, ninajua kwamba, kufikia malengo (zaidi ya mara 1)
-5. USIRUDIE: kufanya kazi (max mara 2)
-6. TUMIA: Ninafuraha, Nina uwezo, Kupitia uzoefu, Nitaweza kuchangia, nimeambatanisha vivuli vya vyeti
-7. Kila aya iwe na maneno tofauti, usirudie wazo lilelile
-8. Malizia kwa sentensi moja tu ya matarajio
-9. USIVUMBUE: umri, elimu, chuo, mwaka isipokuwa vimetajwa
-10. Barua ionekane imeandikwa na Mtanzania halisi`;
+<!-- SECTION_CLOSING -->
+Yours sincerely,
 
-    const swahiliResult = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
-      messages: [
-        { role: 'system', content: 'Wewe ni mtaalamu wa kuandika barua za maombi ya kazi Tanzania. Andika kwa Kiswahili sanifu cha kiofisi. Fuata sheria zote ulizopewa.' },
-        { role: 'user', content: swahiliPrompt }
-      ],
-      temperature: 0.3,
-      max_tokens: 2048,
-    });
+<!-- SECTION_SIGNATURE -->
+${fullName}`;
 
-    let applicationLetter = swahiliResult.choices[0]?.message?.content || '';
+    const coverSystemPrompt = isSwahili
+      ? `Andika barua ya kuambatana kwa Kiswahili. Aya 2-3. USIVUMBUE data. USITUMIE: shauku, furahi, hamasa, Ninafurahishwa, ninajua kwamba.`
+      : `Fill in ONLY the body of a cover letter template. Return the COMPLETE template. Keep it short - 150 words max. Do NOT repeat the name in the closing.`;
 
-    // Remove duplicate
-    const swMarker = '<!-- SECTION_DATE -->';
-    const swFirst = applicationLetter.indexOf(swMarker);
-    const swSecond = applicationLetter.indexOf(swMarker, swFirst + 1);
-    if (swSecond !== -1) {
-      applicationLetter = applicationLetter.substring(0, swSecond).trim();
-    }
-
-    // Swahili cover letter
-    const swCoverPrompt = `Andika barua ya kuambatana kwa Kiswahili sanifu.
+    const coverUserPrompt = isSwahili
+      ? `Andika barua ya kuambatana kwa Kiswahili.
 
 MWOMBAJI: ${fullName} | ${education || 'Haijatajwa'} | Miaka ${experience} | ${skills || 'Haijatajwa'}
-KAZI: ${jobTitle} katika ${companyName}
-MAELEZO: ${jobDescription.substring(0, 300)}
+KAZI: ${jobTitle} katika ${companyName} | ${jobDescription.substring(0, 300)}
 NCHI: ${data.targetCountry}
 
 TEMPLATE:
-<!-- SECTION_BODY -->
-[Andika aya 2-3 kwa Kiswahili]
+${coverTemplate}
 
-<!-- SECTION_CLOSING -->
-Wako mwaminifu,
+Badilisha [ANDIKA MWILI WA BARUA YA KUAMBATANA HAPA] na aya 2-3. Rudisha YOTE.`
+      : `Fill in this cover letter template:
 
-<!-- SECTION_SIGNATURE -->
-${fullName}
+APPLICANT: ${fullName} | ${education} | ${experience} years | ${skills}
+TARGET: ${jobTitle} at ${companyName} | ${jobDescription.substring(0, 300)}
+COUNTRY: ${data.targetCountry}
 
-Rudisha template YOTE. USITUMIE: shauku, furahi, hamasa, Ninafurahishwa, ninajua kwamba.`;
+TEMPLATE:
+${coverTemplate}
 
-    const swCoverResult = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
+Replace [WRITE COVER LETTER BODY HERE]. Return COMPLETE template.`;
+
+    const coverResult = await groq.chat.completions.create({
+      model: MODEL,
       messages: [
-        { role: 'system', content: 'Andika barua ya kuambatana kwa Kiswahili cha Tanzania.' },
-        { role: 'user', content: swCoverPrompt }
+        { role: 'system', content: coverSystemPrompt },
+        { role: 'user', content: coverUserPrompt }
       ],
-      temperature: 0.3,
-      max_tokens: 1024,
+      temperature: isSwahili ? 0.3 : 0.7,
+      max_tokens: isSwahili ? 1536 : 1024,
     });
 
-    let coverLetter = swCoverResult.choices[0]?.message?.content || '';
+    let coverLetter = coverResult.choices[0]?.message?.content || '';
 
-    const swCoverMarker = '<!-- SECTION_BODY -->';
-    const swCoverFirst = coverLetter.indexOf(swCoverMarker);
-    const swCoverSecond = coverLetter.indexOf(swCoverMarker, swCoverFirst + 1);
-    if (swCoverSecond !== -1) {
-      coverLetter = coverLetter.substring(0, swCoverSecond).trim();
+    const coverMarker = '<!-- SECTION_BODY -->';
+    const coverFirst = coverLetter.indexOf(coverMarker);
+    const coverSecond = coverLetter.indexOf(coverMarker, coverFirst + 1);
+    if (coverSecond !== -1) {
+      coverLetter = coverLetter.substring(0, coverSecond).trim();
     }
 
-    // ATS Analysis
+    // ─── Step 3: ATS Analysis ──────────────────────────
     const atsResult = await groq.chat.completions.create({
       model: 'llama-3.1-8b-instant',
       messages: [
-        { role: 'system', content: 'Return ONLY a JSON object.' },
-        { role: 'user', content: `{"matchScore":75,"matchingSkills":["skill1"],"missingSkills":[],"recommendations":["tip1"],"cvImprovements":["cv1"]}\n\nAnalyze: ${jobTitle} | ${skills}` }
+        { role: 'system', content: 'Return ONLY a JSON object. No other text.' },
+        {
+          role: 'user',
+          content: `{"matchScore":75,"matchingSkills":["skill1"],"missingSkills":[],"recommendations":["tip1"],"cvImprovements":["cv1"]}
+
+Analyze: ${jobTitle} | ${skills} | ${experience} years`
+        }
       ],
       temperature: 0.3,
       max_tokens: 512,
     });
 
-    let atsAnalysis = { matchScore: 70, matchingSkills: [] as string[], missingSkills: [] as string[], recommendations: [] as string[], cvImprovements: [] as string[] };
+    let atsAnalysis = {
+      matchScore: 70,
+      matchingSkills: [] as string[],
+      missingSkills: [] as string[],
+      recommendations: [] as string[],
+      cvImprovements: [] as string[],
+    };
+
     try {
       const atsText = atsResult.choices[0]?.message?.content || '{}';
       const clean = atsText.replace(/```json|```/g, '').trim();
@@ -314,7 +290,10 @@ Rudisha template YOTE. USITUMIE: shauku, furahi, hamasa, Ninafurahishwa, ninajua
       regionalStandard: getRegionalStandard(data.targetCountry || 'Tanzania'),
     }), {
       status: 200,
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      },
     });
 
   } catch (error: any) {
@@ -322,7 +301,10 @@ Rudisha template YOTE. USITUMIE: shauku, furahi, hamasa, Ninafurahishwa, ninajua
       error: error.message,
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      },
     });
   }
 };
