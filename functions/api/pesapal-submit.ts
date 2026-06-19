@@ -1,10 +1,3 @@
-export const onRequestGet = async (context: any) => {
-  return new Response(JSON.stringify({ status: 'ok' }), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-  });
-};
-
 export const onRequestPost = async (context: any) => {
   try {
     const data = await context.request.json();
@@ -15,8 +8,11 @@ export const onRequestPost = async (context: any) => {
     const phone = data.phone;
     const email = data.email;
 
+    // Try SANDBOX first
+    const baseUrl = 'https://cybqa.pesapal.com/v3';
+
     // Step 1: Get Auth Token
-    const authRes = await fetch('https://pay.pesapal.com/v3/api/Auth/RequestToken', {
+    const authRes = await fetch(`${baseUrl}/api/Auth/RequestToken`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -32,8 +28,9 @@ export const onRequestPost = async (context: any) => {
 
     if (!authData.token) {
       return new Response(JSON.stringify({
-        error: 'Auth failed',
+        error: 'Auth failed - check if keys are sandbox or live',
         details: JSON.stringify(authData),
+        baseUrlUsed: baseUrl,
       }), {
         status: 500,
         headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
@@ -43,10 +40,8 @@ export const onRequestPost = async (context: any) => {
     const token = authData.token;
     const merchantRef = `JR-${Date.now()}`;
     const callbackUrl = `https://coverletter.jobsreport.online/api/pesapal-callback`;
-    const origin = 'https://coverletter.jobsreport.online';
 
-    // Step 2: Submit Order
-    const orderRes = await fetch('https://pay.pesapal.com/v3/api/Transactions/SubmitOrderRequest', {
+    const orderRes = await fetch(`${baseUrl}/api/Transactions/SubmitOrderRequest`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -59,7 +54,6 @@ export const onRequestPost = async (context: any) => {
         amount: Number(amount),
         description: 'Application Letter Generation',
         callback_url: callbackUrl,
-        cancellation_url: origin,
         notification_id: 'ALL',
         redirect_mode: 'TOP_WINDOW',
         billing_address: {
@@ -70,16 +64,6 @@ export const onRequestPost = async (context: any) => {
     });
 
     const orderData: any = await orderRes.json();
-
-    if (orderData.error) {
-      return new Response(JSON.stringify({
-        error: 'Order failed',
-        details: JSON.stringify(orderData),
-      }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-      });
-    }
 
     return new Response(JSON.stringify({
       success: true,
@@ -93,22 +77,10 @@ export const onRequestPost = async (context: any) => {
 
   } catch (error: any) {
     return new Response(JSON.stringify({
-      error: error.message || 'Payment initiation failed',
+      error: error.message,
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
     });
   }
-};
-
-export const onRequestOptions = async () => {
-  return new Response(null, {
-    status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-      'Access-Control-Max-Age': '86400',
-    },
-  });
 };
