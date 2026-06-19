@@ -1,3 +1,4 @@
+
 export const onRequestPost = async (context: any) => {
   try {
     const data = await context.request.json();
@@ -11,7 +12,18 @@ export const onRequestPost = async (context: any) => {
     const merchantRef = `JR-${Date.now()}`;
     const callbackUrl = `https://coverletter.jobsreport.online/api/pesapal-callback`;
 
-    // Build XML for V1
+    // OAuth parameters
+    const oauthParams: Record<string, string> = {
+      oauth_consumer_key: PESAPAL_CONSUMER_KEY,
+      oauth_signature_method: 'HMAC-SHA1',
+      oauth_signature: PESAPAL_CONSUMER_SECRET + '&',
+      oauth_timestamp: Math.floor(Date.now() / 1000).toString(),
+      oauth_nonce: Math.random().toString(36).substring(2, 15),
+      oauth_version: '1.0',
+      oauth_callback: callbackUrl,
+    };
+
+    // Build XML
     const xml = `<?xml version="1.0" encoding="utf-8"?>
 <PesapalDirectOrderInfo 
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
@@ -27,23 +39,23 @@ export const onRequestPost = async (context: any) => {
   Currency="${currency}"
   xmlns="http://www.pesapal.com" />`;
 
-    // Post to V1 endpoint
-    const formData = new URLSearchParams();
-    formData.append('oauth_consumer_key', PESAPAL_CONSUMER_KEY);
-    formData.append('oauth_callback', callbackUrl);
-    formData.append('pesapal_request_data', xml);
+    // Build URL with OAuth params
+    const baseUrl = 'https://www.pesapal.com/api/PostPesapalDirectOrderV4';
+    const oauthString = Object.entries(oauthParams)
+      .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+      .join('&');
 
-    const response = await fetch('https://www.pesapal.com/api/PostPesapalDirectOrderV4', {
-      method: 'POST',
+    const fullUrl = `${baseUrl}?${oauthString}&pesapal_request_data=${encodeURIComponent(xml)}`;
+
+    const response = await fetch(fullUrl, {
+      method: 'GET',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'text/plain',
       },
-      body: formData.toString(),
     });
 
     const responseText = await response.text();
 
-    // V1 returns a URL directly
     if (responseText.startsWith('http')) {
       return new Response(JSON.stringify({
         success: true,
@@ -56,8 +68,8 @@ export const onRequestPost = async (context: any) => {
     }
 
     return new Response(JSON.stringify({
-      error: 'Unexpected response from PesaPal',
-      details: responseText,
+      error: 'Unexpected response',
+      details: responseText.substring(0, 500),
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
@@ -71,4 +83,16 @@ export const onRequestPost = async (context: any) => {
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
     });
   }
+};
+
+export const onRequestOptions = async () => {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Max-Age': '86400',
+    },
+  });
 };
