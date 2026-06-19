@@ -696,33 +696,38 @@ export default function App() {
       ) ? '' : professionalInfo.highestEducation;
 
       // Build company address from structured fields
-      const structuredCompanyAddress = [
-        companyPOBox ? `P.O. Box ${companyPOBox}` : '',
-        companyDistrict,
-        companyRegion,
-        companyCountry,
-      ].filter(Boolean).join(', ');
+   
+     // Build company address from structured fields
+const structuredCompanyAddress = [
+  companyPOBox ? `P.O. Box ${companyPOBox}` : '',
+  companyDistrict,
+  companyRegion,
+  companyCountry,
+].filter(Boolean).join(', ');
 
-      // Use structured address if available, otherwise fallback to jobInfo.companyAddress
-      const finalCompanyAddress = structuredCompanyAddress || jobInfo.companyAddress;
+// Use structured address if available, otherwise fallback to jobInfo.companyAddress
+const finalCompanyAddress = structuredCompanyAddress || jobInfo.companyAddress;
 
-      const response = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          personalInfo, // Already has the correct address
-          professionalInfo: {
-            ...professionalInfo,
-            highestEducation: educationToShow, // Filtered education
-          },
-          jobInfo: {
-            ...jobInfo,
-            companyAddress: finalCompanyAddress, // Use structured address
-          },
-          targetCountry,
-          targetLanguage
-        })
-      });
+const response = await fetch('/api/generate', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    personalInfo,
+    professionalInfo: {
+      ...professionalInfo,
+      highestEducation: educationToShow,
+    },
+    jobInfo: {
+      ...jobInfo,
+      companyAddress: finalCompanyAddress,
+    },
+    targetCountry,
+    targetLanguage
+  })
+}); 
+    
+  
+  
 
       if (!response.ok) {
         const errorData = await response.json();
