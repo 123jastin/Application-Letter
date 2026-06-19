@@ -15,10 +15,13 @@ export const onRequestPost = async (context: any) => {
     const phone = data.phone;
     const email = data.email;
 
-    // Step 1: Get auth token
+    // Step 1: Get Auth Token
     const authRes = await fetch('https://pay.pesapal.com/v3/api/Auth/RequestToken', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
       body: JSON.stringify({
         consumer_key: PESAPAL_CONSUMER_KEY,
         consumer_secret: PESAPAL_CONSUMER_SECRET,
@@ -26,15 +29,23 @@ export const onRequestPost = async (context: any) => {
     });
 
     const authData: any = await authRes.json();
-    
+
     if (!authData.token) {
-      throw new Error('PesaPal auth failed: ' + JSON.stringify(authData));
+      return new Response(JSON.stringify({
+        error: 'Auth failed',
+        details: JSON.stringify(authData),
+      }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      });
     }
 
     const token = authData.token;
     const merchantRef = `JR-${Date.now()}`;
+    const callbackUrl = `https://coverletter.jobsreport.online/api/pesapal-callback`;
+    const origin = 'https://coverletter.jobsreport.online';
 
-    // Step 2: Submit order
+    // Step 2: Submit Order
     const orderRes = await fetch('https://pay.pesapal.com/v3/api/Transactions/SubmitOrderRequest', {
       method: 'POST',
       headers: {
@@ -45,10 +56,12 @@ export const onRequestPost = async (context: any) => {
       body: JSON.stringify({
         id: merchantRef,
         currency: currency,
-        amount: amount,
+        amount: Number(amount),
         description: 'Application Letter Generation',
-        callback_url: `https://coverletter.jobsreport.online/api/pesapal-callback`,
+        callback_url: callbackUrl,
+        cancellation_url: origin,
         notification_id: 'ALL',
+        redirect_mode: 'TOP_WINDOW',
         billing_address: {
           email_address: email || 'customer@jobsreport.online',
           phone_number: phone,
@@ -58,8 +71,14 @@ export const onRequestPost = async (context: any) => {
 
     const orderData: any = await orderRes.json();
 
-    if (!orderData.redirect_url) {
-      throw new Error('Order failed: ' + JSON.stringify(orderData));
+    if (orderData.error) {
+      return new Response(JSON.stringify({
+        error: 'Order failed',
+        details: JSON.stringify(orderData),
+      }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      });
     }
 
     return new Response(JSON.stringify({
@@ -74,7 +93,7 @@ export const onRequestPost = async (context: any) => {
 
   } catch (error: any) {
     return new Response(JSON.stringify({
-      error: error.message,
+      error: error.message || 'Payment initiation failed',
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
