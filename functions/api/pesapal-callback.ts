@@ -1,64 +1,49 @@
-import { PagesFunction } from '@cloudflare/workers-types';
-
-type Env = {
-  PESAPAL_CONSUMER_KEY: string;
-  PESAPAL_CONSUMER_SECRET: string;
-  PESAPAL_BASE_URL: string;
-};
-
-export const onRequestGet: PagesFunction<Env> = async (context) => {
-  const { PESAPAL_CONSUMER_KEY, PESAPAL_CONSUMER_SECRET, PESAPAL_BASE_URL } = context.env;
+export const onRequestGet = async (context: any) => {
   const url = new URL(context.request.url);
   const orderTrackingId = url.searchParams.get('OrderTrackingId');
   const orderMerchantReference = url.searchParams.get('OrderMerchantReference');
 
+  const origin = 'https://coverletter.jobsreport.online';
+
   if (!orderTrackingId) {
-    return Response.redirect(`${url.origin}?payment=failed&reason=no_tracking_id`, 302);
+    return Response.redirect(`${origin}?payment=failed`, 302);
   }
 
   try {
-    const baseUrl = PESAPAL_BASE_URL || 'https://pay.pesapal.com/v3';
+    const { PESAPAL_CONSUMER_KEY, PESAPAL_CONSUMER_SECRET } = context.env;
 
-    // Get auth token
-    const authResponse = await fetch(`${baseUrl}/api/Auth/RequestToken`, {
+    // Get token
+    const authRes = await fetch('https://pay.pesapal.com/v3/api/Auth/RequestToken', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         consumer_key: PESAPAL_CONSUMER_KEY,
         consumer_secret: PESAPAL_CONSUMER_SECRET,
       }),
     });
 
-    const authData: any = await authResponse.json();
-    const token = authData.token;
+    const authData: any = await authRes.json();
 
-    // Check transaction status
-    const statusResponse = await fetch(
-      `${baseUrl}/api/Transactions/GetTransactionStatus?orderTrackingId=${orderTrackingId}`,
+    // Check status
+    const statusRes = await fetch(
+      `https://pay.pesapal.com/v3/api/Transactions/GetTransactionStatus?orderTrackingId=${orderTrackingId}`,
       {
         headers: {
           'Accept': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${authData.token}`,
         },
       }
     );
 
-    const statusData: any = await statusResponse.json();
+    const statusData: any = await statusRes.json();
 
     if (statusData.payment_status_description === 'COMPLETED') {
-      // Payment successful - redirect back with success
-      return Response.redirect(
-        `${url.origin}?payment=success&ref=${orderMerchantReference}&tracking=${orderTrackingId}`,
-        302
-      );
+      return Response.redirect(`${origin}?payment=success&ref=${orderMerchantReference}`, 302);
     } else {
-      return Response.redirect(
-        `${url.origin}?payment=failed&reason=${statusData.payment_status_description}`,
-        302
-      );
+      return Response.redirect(`${origin}?payment=failed`, 302);
     }
 
   } catch (error: any) {
-    return Response.redirect(`${url.origin}?payment=error&reason=${encodeURIComponent(error.message)}`, 302);
+    return Response.redirect(`${origin}?payment=error`, 302);
   }
 };
