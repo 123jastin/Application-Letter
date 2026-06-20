@@ -696,7 +696,6 @@ export default function App() {
     }
   };
 
-
 const handlePaymentAndGenerate = async () => {
   if (!validateStep(0) || !validateStep(2)) {
     setActiveStep(0);
@@ -704,7 +703,7 @@ const handlePaymentAndGenerate = async () => {
   }
 
   setIsGenerating(true);
-  setGeneratorStages('Redirecting to PesaPal...');
+  setGeneratorStages('Opening payment...');
 
   try {
     const isTanzania = targetCountry === 'Tanzania';
@@ -719,7 +718,6 @@ const handlePaymentAndGenerate = async () => {
         currency: currency,
         phone: personalInfo.phone || '255000000000',
         email: personalInfo.email || 'test@test.com',
-        description: 'Letter Generation',
       }),
     });
 
@@ -731,11 +729,11 @@ const handlePaymentAndGenerate = async () => {
       return;
     }
 
-    // Redirect to PesaPal
-    if (result.redirect_url) {
-      window.location.href = result.redirect_url;
+    // Open PesaPal iframe
+    if (result.iframe_url) {
+      window.location.href = result.iframe_url;
     } else {
-      alert('No redirect URL received');
+      alert('No payment URL received');
       setIsGenerating(false);
     }
 
@@ -745,6 +743,7 @@ const handlePaymentAndGenerate = async () => {
   }
 };
 
+  
 
 
 
