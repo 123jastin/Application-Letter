@@ -723,19 +723,22 @@ const handlePaymentAndGenerate = async () => {
 
     const result = await response.json();
 
-    if (!response.ok) {
-      alert('Error: ' + (result.error || 'Unknown'));
-      setIsGenerating(false);
+    // Show the raw response for debugging
+    alert('PesaPal Response: ' + JSON.stringify(result));
+
+    if (result.response && result.response.startsWith('http')) {
+      // It's a URL - redirect to it
+      window.location.href = result.response;
       return;
     }
 
-    // Open PesaPal iframe
-    if (result.iframe_url) {
+    if (result.iframe_url && result.iframe_url.startsWith('http')) {
       window.location.href = result.iframe_url;
-    } else {
-      alert('No payment URL received');
-      setIsGenerating(false);
+      return;
     }
+
+    alert('No valid URL in response: ' + JSON.stringify(result));
+    setIsGenerating(false);
 
   } catch (err: any) {
     alert('Failed: ' + err.message);
@@ -743,8 +746,7 @@ const handlePaymentAndGenerate = async () => {
   }
 };
 
-  
-
+    
 
 
 
