@@ -696,7 +696,7 @@ export default function App() {
     }
   };
 
-const handlePaymentAndGenerate = async () => {
+ const handlePaymentAndGenerate = async () => {
   if (!validateStep(0) || !validateStep(2)) {
     setActiveStep(0);
     return;
@@ -723,30 +723,29 @@ const handlePaymentAndGenerate = async () => {
 
     const result = await response.json();
 
-    // Show the raw response for debugging
-    alert('PesaPal Response: ' + JSON.stringify(result));
+    // Check for redirect_url first
+    if (result.redirect_url && result.redirect_url.startsWith('http')) {
+      window.location.href = result.redirect_url;
+      return;
+    }
 
+    // Fallback: check raw response field
     if (result.response && result.response.startsWith('http')) {
-      // It's a URL - redirect to it
       window.location.href = result.response;
       return;
     }
 
-    if (result.iframe_url && result.iframe_url.startsWith('http')) {
-      window.location.href = result.iframe_url;
-      return;
-    }
-
-    alert('No valid URL in response: ' + JSON.stringify(result));
+    alert('Response: ' + JSON.stringify(result));
     setIsGenerating(false);
 
   } catch (err: any) {
     alert('Failed: ' + err.message);
     setIsGenerating(false);
   }
-};
+}; 
 
-    
+
+
 
 
 
