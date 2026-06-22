@@ -696,14 +696,14 @@ export default function App() {
     }
   };
 
- const handlePaymentAndGenerate = async () => {
+const handlePaymentAndGenerate = async () => {
   if (!validateStep(0) || !validateStep(2)) {
     setActiveStep(0);
     return;
   }
 
   setIsGenerating(true);
-  setGeneratorStages('Opening payment...');
+  setGeneratorStages('Redirecting to PesaPal...');
 
   try {
     const isTanzania = targetCountry === 'Tanzania';
@@ -716,37 +716,30 @@ export default function App() {
       body: JSON.stringify({
         amount: amount,
         currency: currency,
-        phone: personalInfo.phone || '255000000000',
-        email: personalInfo.email || 'test@test.com',
+        phone: personalInfo.phone || '',
+        email: personalInfo.email || '',
       }),
     });
 
     const result = await response.json();
 
-    // Check for redirect_url first
-    if (result.redirect_url && result.redirect_url.startsWith('http')) {
+    if (result.redirect_url) {
+      // Save merchant ref for callback
+      localStorage.setItem('jr_merchant_ref', result.merchant_reference);
+      // Redirect user's browser to PesaPal
       window.location.href = result.redirect_url;
-      return;
+    } else {
+      alert('Error: ' + JSON.stringify(result));
+      setIsGenerating(false);
     }
-
-    // Fallback: check raw response field
-    if (result.response && result.response.startsWith('http')) {
-      window.location.href = result.response;
-      return;
-    }
-
-    alert('Response: ' + JSON.stringify(result));
-    setIsGenerating(false);
 
   } catch (err: any) {
     alert('Failed: ' + err.message);
     setIsGenerating(false);
   }
-}; 
+};
 
-
-
-
+  
 
 
   const handleGenerateLetters = async () => {
