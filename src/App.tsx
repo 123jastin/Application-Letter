@@ -433,6 +433,27 @@ export default function App() {
     }
   }, []);
 
+  // Handle PesaPal payment callback
+useEffect(() => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const trackingId = urlParams.get('pesapal_transaction_tracking_id');
+  const merchantRef = urlParams.get('pesapal_merchant_reference');
+
+  if (trackingId && merchantRef) {
+    // Clean URL
+    window.history.replaceState({}, '', window.location.pathname);
+    setPaymentStatus('paid');
+    localStorage.setItem('jr_payment_tracking', trackingId);
+    localStorage.setItem('jr_merchant_ref', merchantRef);
+    toastSuccess('Payment received! Generating your letter...');
+    
+    // Auto-generate letter
+    setTimeout(() => {
+      handleGenerateLetters();
+    }, 800);
+  }
+}, []);
+
   const activeStandard = generatedResult?.regionalStandard || getRegionalStandard(generatedResult?.request?.targetCountry || targetCountry);
 
   const savePersonalInfoLocally = (info: PersonalInfo) => {
